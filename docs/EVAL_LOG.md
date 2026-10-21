@@ -67,6 +67,11 @@ These are the ones that should be run all the time.
 remediation, including the earlier day: **$0.21668** against the plan's
 **$0.50** budget. $0.28 remains.
 
+**Project to date**, from the `answer_log` table: **791 answers, $0.777879**
+($0.000983 per answer). That figure includes the whole build - the 729
+answers from before the remediation, the eval runs, and the manual testing.
+The remediation session itself is the $0.21668 above.
+
 The stub is a ~50 line HTTP server that answers `POST /api/chat` with the
 same `data: {json}` frames the real route emits. It lives OUTSIDE the repo,
 in the temporary directory, and it is what makes it possible to validate the
