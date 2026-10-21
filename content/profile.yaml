@@ -1,0 +1,135 @@
+name: Kaustubh Kale
+headline: Graduate Engineer
+location: Pune, Maharashtra, India
+email: kaustubh.kale.work@gmail.com
+phone: "+91-9975526627"
+links:
+  github: https://github.com/kaustubh12022
+  linkedin: https://linkedin.com/in/kaustubhkale12
+
+availability:
+  status: Open to full-time roles
+  roles:
+    - AI / GenAI Engineer
+    - AI Agents / Automation
+    - Backend Developer
+    - Full Stack Developer
+    - Java Developer
+  locations:
+    - Pune
+    - Mumbai
+    - Bangalore
+    - Remote
+    - Open to relocation
+
+summary: >
+  Graduate Engineer (B.E. Information Technology, 2026) who builds AI automation,
+  agentic tools, and backend systems. I have shipped a job-automation pipeline
+  with DeepSeek scoring and ATS resume generation, a production booking platform,
+  a realtime settlement PWA, and a Gemini Live voice agent. I care about grounded
+  AI, measured results, and code that survives review.
+
+education:
+  - institution: SKNSITS, Lonavala (Savitribai Phule Pune University)
+    credential: B.E. Information Technology
+    dates: "2022 - 2026"
+    grade: "CGPA 7.51 / 10.0"
+    location: Pune, India
+  - institution: S.D.H.G.P. Sec & Higher Secondary School, Mukindpur
+    credential: HSC (Science)
+    board: Maharashtra State Board
+    dates: "2020 - 2022"
+    grade: "82.33%"
+  - institution: S.D.H.G.P. Sec & Higher Secondary School, Mukindpur
+    credential: SSC
+    board: Maharashtra State Board
+    dates: "2019 - 2020"
+    grade: "88.00%"
+
+experience:
+  - company: CWIPedia Technologies
+    role: Java Developer Intern
+    dates: "Jan 2025 - Feb 2025"
+    location: Pune, India
+    verification: resume-only
+    note: >
+      No code, offer letter, or project artifact was available in the audited
+      folders. The internship is listed as experience, but its resume metrics are
+      not presented as verified portfolio evidence.
+    bullets:
+      - Built modular backend features with Java, SQL, JDBC, and REST APIs.
+      - Worked on query and payload optimization using data structures and algorithms.
+      - Built responsive UI with HTML5, CSS3, and JavaScript.
+      - Worked in two-week Agile/Scrum sprints.
+
+skills:
+  shipped:
+    ai:
+      - Python
+      - AsyncIO
+      - DeepSeek API
+      - Prompt engineering
+      - JSON schema validation
+      - Regex filtering
+      - Jinja2
+      - Playwright
+      - Pandas
+      - Gemini API
+      - Gemini Live API
+      - Supabase
+      - Deno edge functions
+      - Flutter / Dart
+    backend:
+      - Node.js
+      - Express
+      - MongoDB / Mongoose
+      - JWT
+      - SQLite
+      - REST APIs
+      - WebSockets
+      - Flask
+    frontend:
+      - React
+      - JavaScript
+      - Tailwind CSS
+      - Vite
+      - HTML5
+      - CSS3
+      - PWA
+    tools:
+      - Git / GitHub
+      - Postman
+      - VS Code
+      - IntelliJ IDEA
+      - Maven
+      - Vercel
+      - Render
+  internship:
+    - Java
+    - SQL
+    - JDBC
+    - REST APIs
+  coursework:
+    - Spring Core
+    - Hibernate / JPA
+    - MySQL
+    - Docker
+    - Kubernetes
+    - Data Structures & Algorithms
+    - OOP
+    - DBMS
+  building:
+    - RAG with pgvector
+    - MCP tool servers
+    - Agentic retrieval
+    - Next.js 16
+    - AI SDK 7
+    - TypeScript
+
+languages:
+  - language: English
+    proficiency: Professional
+  - language: Hindi
+    proficiency: Native
+  - language: Marathi
+    proficiency: Native

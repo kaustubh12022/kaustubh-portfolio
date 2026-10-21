@@ -1,0 +1,294 @@
+- id: smartapply-volume
+  topic: SmartApply throughput
+  claim: "Scrapes 2,000+ live postings daily."
+  status: unverified
+  evidence: >
+    No daily-rate measurement exists. A recorded batch on 2026-10-05 started with
+    3,360 raw postings, dropped 2,328, and scored 1,032. A separate batch on
+    2026-10-14 parsed 35 URLs and shortlisted 17.
+  source: "JobHunt-Automation/full_matrix_results.json; batch_summary_report.json"
+  publicWording: >
+    "In a recorded batch, the pipeline went from 3,360 raw postings to 1,032
+    scored postings. Throughput depends on the portals and the run."
+
+- id: smartapply-cost
+  topic: SmartApply cost reduction
+  claim: "Ranking listings with >80% cost reduction."
+  status: unverified
+  evidence: >
+    Two different measurements are usually conflated. First, the filter cut the
+    number of LLM scoring calls by 69.3% in the recorded batch (3,360 raw postings
+    -> 1,032 scored, from full_matrix_results.json stats). Second, the project's
+    own documentation records a separate token-cost measurement: 62.57% cost
+    savings against baseline with a 99.77% prompt-prefix cache-hit rate
+    (SUMMARY.md:18, 88-89, 192, 476). The rate table at SUMMARY.md:189-190 is
+    deepseek-chat $0.07 cache-hit / $0.27 cache-miss / $1.10 completion per 1M
+    tokens, and src/ai_engine.py:59-74 (calculate_deepseek_cost) implements exactly
+    that three-rate accounting. src/scorer.py:538-562 runs the first scoring call
+    serially to warm the provider cache before the rest fan out with
+    asyncio.gather. Neither measurement reaches 80%, and no independent A/B cost
+    run beyond the project's own documentation was found.
+  source: "JobHunt-Automation/full_matrix_results.json; JobHunt-Automation/SUMMARY.md; src/ai_engine.py; src/scorer.py"
+  publicWording: >
+    Two different numbers are usually conflated here. The filter cut LLM scoring
+    calls by 69% — 3,360 raw postings became 1,032 scored in the recorded batch.
+    Separately, prompt-prefix caching brought token cost down 62.57% against
+    baseline, with a 99.77% cache-hit rate; the first scoring call runs serially to
+    warm the provider cache before the rest fan out. I do not claim an 80% cost
+    reduction.
+
+- id: smartapply-weasyprint
+  topic: SmartApply PDF rendering
+  claim: "Resume PDFs are rendered with WeasyPrint."
+  status: contradicted
+  evidence: >
+    The renderer uses Jinja2 HTML templates and Playwright Chromium, then validates
+    with pypdf/PyMuPDF. WeasyPrint is not imported.
+  source: "JobHunt-Automation/src/pdf_generator.py"
+  publicWording: "The pipeline renders ATS-oriented PDFs with Jinja2 + Playwright."
+
+- id: campflow-owners
+  topic: CampFlow adoption
+  claim: "Adopted by 5+ commercial business owners."
+  status: unverified
+  evidence: >
+    No seed data, testimonials, or owner records support 5+. At audit time the live
+    API returned 3 properties under one owner.
+  source: "Pawna-camping/backend/models; live API audit 2026-10-19"
+  publicWording: >
+    "A multi-property booking platform. The live data I audited had three
+    properties under one owner; I do not claim five paying businesses."
+
+- id: campflow-multitenant
+  topic: CampFlow tenancy
+  claim: "Multi-tenant booking and management portal."
+  status: partial
+  evidence: >
+    Owner-scoped RBAC exists in one shared MongoDB database. There is no tenant
+    isolation, per-tenant branding, or self-serve onboarding.
+  source: "Pawna-camping/backend/middleware/auth.js; controllers"
+  publicWording: "A role-scoped, multi-property booking platform."
+
+- id: campflow-microservices
+  topic: CampFlow deployment
+  claim: "RESTful API microservices on Vercel."
+  status: contradicted
+  evidence: >
+    One Vercel-hosted React SPA and one Express API (Render). No service split,
+    queue, or independent deployables.
+  source: "Pawna-camping/package.json; backend/server.js; vercel.json"
+  publicWording: "A React frontend on Vercel and an Express API on Render."
+
+- id: campflow-realtime-push
+  topic: CampFlow dashboards and notifications
+  claim: "Real-time analytics dashboards with push notifications."
+  status: partial
+  evidence: >
+    Dashboards use Recharts and request/response APIs, not realtime push. Web-push
+    code exists, but the owner subscription flow is incomplete.
+  source: "Pawna-camping/frontend/src; backend/routes/push.js"
+  publicWording: "Analytics dashboards and a PWA shell; push notifications are partial."
+
+- id: personal-ai-os-stack
+  topic: Personal AI OS stack
+  claim: "Python, Ollama, LangChain, FastAPI, SQLite."
+  status: contradicted
+  evidence: >
+    The repo is Flutter/Dart + Riverpod + Supabase Postgres/Realtime + a 614-line
+    Deno/TypeScript edge function calling Gemini, with Groq fallback. There is no
+    Python, Ollama, LangChain, FastAPI, or SQLite code.
+  source: "personal-ai-os/pubspec.yaml; supabase/functions/chat/index.ts"
+  publicWording: >
+    "A Flutter + Supabase assistant with a Deno edge function, Gemini, and a Groq
+    fallback."
+
+- id: personal-ai-os-voice
+  topic: Personal AI OS voice and tools
+  claim: "Low-latency voice streaming and custom tool-calling agents."
+  status: contradicted
+  evidence: >
+    No audio pipeline exists. The edge function uses a regex fast-path and a JSON
+    intent contract executed server-side; it is not provider tool calling.
+  source: "personal-ai-os/lib/features/chat; supabase/functions/chat/index.ts"
+  publicWording: >
+    "Chat-driven actions with a zero-token regex fast-path and JSON-validated
+    intents. Voice is not implemented."
+
+- id: medflow
+  topic: MedFlow
+  claim: "Spring Boot, MySQL, JPA/Hibernate, JWT, HIPAA, 40% report throughput."
+  status: contradicted
+  evidence: >
+    The hospital-management-system repo is Node/Express/MongoDB, backend-only, with
+    no reports module, no benchmarks, and no HIPAA controls. No Spring Boot/MySQL
+    project exists in the audited folders.
+  source: "hospital-management-system-/package.json; server.js"
+  publicWording: >
+    "There is no MedFlow Spring Boot project. I do not present the Node hospital
+    prototype as MedFlow or as HIPAA-compliant."
+
+- id: c54-socketio
+  topic: C54 multiplayer
+  claim: "Socket.IO game loops and concurrent multiplayer players."
+  status: contradicted
+  evidence: >
+    C54 is a vanilla-JS PWA with Supabase Realtime. The host writes the whole
+    session JSON; guests are read-only. It is a live scoreboard, not a playable
+    multiplayer casino.
+  source: "C54-Casino/app.js; C54-Casino/README.md"
+  publicWording: >
+    "A host-authoritative card-score tracker and settlement PWA using Supabase
+    Realtime."
+
+- id: neon-pulse
+  topic: Neon-Pulse
+  claim: "Recursive pattern engine with 20+ difficulty tiers and zero-lag DOM."
+  status: contradicted
+  evidence: >
+    No project named Neon-Pulse exists in the audited folders. Simon-Says-Game is a
+    355-line tutorial implementation, not the described engine.
+  source: "Desktop/GitHub projects audit 2026-10-19"
+  publicWording: "Neon-Pulse is not in the portfolio because there is no code for it."
+
+- id: rag-vector
+  topic: RAG and vector search
+  claim: "RAG and vector search experience."
+  status: contradicted
+  evidence: >
+    No shipped project implements retrieval or vector search. Personal AI OS has an
+    unused second_brain.embedding table, but nothing writes or queries it. This
+    portfolio is the first real implementation.
+  source: "personal-ai-os/supabase/migrations"
+  publicWording: >
+    "I do not have a production RAG project in my prior work. This portfolio is my
+    first real hybrid-retrieval system, and I document it as such."
+
+- id: mcp
+  topic: MCP integration
+  claim: "MCP integrations in shipped projects."
+  status: partial
+  evidence: >
+    The only MCP-related file is an outreach helper in JobHunt. It is not part of
+    the scoring or automation pipeline. This portfolio will expose read-only tools
+    as an MCP server.
+  source: "JobHunt-Automation/consultancy_outreach/send_via_mcp.py"
+  publicWording: >
+    "I have used MCP tooling, but my prior projects do not depend on it. The
+    portfolio exposes its knowledge tools over MCP."
+
+- id: github-link
+  topic: GitHub identity
+  claim: "github.com/kaustubhkale12 contains the projects."
+  status: contradicted
+  evidence: >
+    kaustubhkale12 has 0 public repos and was created 2026-07-11. The 19 repos are
+    under kaustubh12022.
+  source: "GitHub API audit 2026-10-19"
+  publicWording: "All links point to github.com/kaustubh12022."
+
+- id: internship-metrics
+  topic: CWIPedia internship metrics
+  claim: "30% reusability, 20% latency reduction, 25% render improvement."
+  status: unverified
+  evidence: >
+    No code, benchmark, or employer artifact was available in the audited folders.
+    The internship itself is listed as experience; the numbers are not presented as
+    verified portfolio evidence.
+  source: "Resume-only; no artifact found"
+  publicWording: >
+    "I list the internship and the technologies I used. I do not present the
+    percentage improvements as measured portfolio results."
+
+- id: aura-coverage
+  topic: Aura test coverage
+  claim: "122 tests and 100% coverage."
+  status: partial
+  evidence: >
+    The repo contains 129 test declarations across unit/integration/E2E suites, but
+    no coverage provider or coverage report. The 100% claim is not supported.
+  source: "aura-skincare-voice-cx/tests; package.json"
+  publicWording: >
+    "Aura has 129 test declarations across unit, integration, and E2E suites. I do
+    not claim 100% coverage."
+
+- id: pawna-security
+  topic: Pawna security
+  claim: "Production-ready."
+  status: partial
+  evidence: >
+    Booking creation has no transaction/lock; User.plainPassword is stored and
+    returned by an owner endpoint; the public properties endpoint leaks owner email.
+  source: "Pawna-camping/backend/controllers/bookingController.js; models/User.js"
+  publicWording: >
+    "A working production deployment with known hardening work: booking
+    transactions, password field removal, and response shaping."
+
+- id: c54-security
+  topic: C54 security
+  claim: "Safe to share publicly."
+  status: contradicted
+  evidence: >
+    Hardcoded Supabase credentials are present in init_tables.js and test_suite.js;
+    RLS policies allow anon reads/inserts/updates. Rotate credentials and fix RLS
+    before linking the live app.
+  source: "C54-Casino/init_tables.js; test_suite.js; supabase policies"
+  publicWording: >
+    "I am rotating the exposed credentials and tightening RLS before sharing the
+    live demo."
+
+- id: java-spring
+  topic: Java and Spring Boot
+  claim: "Spring Boot/MySQL/JPA project experience."
+  status: contradicted
+  evidence: >
+    Across the audited folders there is no pom.xml, no Spring Boot application, and
+    no MySQL project. The only .java files are DSA solutions and Flutter-generated
+    files. Java is used in DSA and the internship.
+  source: "Desktop audit 2026-10-19"
+  publicWording: >
+    "I use Java for DSA and used it in my internship. I do not currently have a
+    public Spring Boot project; that is a gap I am addressing."
+
+- id: c54-stack
+  topic: C54 technology stack
+  claim: "Built a full-stack real-time multiplayer gaming platform with React, Node.js, Socket.IO, Tailwind CSS and Vite."
+  status: contradicted
+  evidence: >
+    The repo is Vanilla JS ES6 modules with Supabase Postgres + Realtime and a PWA
+    shell (service worker + manifest). There is no React, no Node.js server, no
+    Socket.IO, no Tailwind and no Vite. package.json has exactly one dependency:
+    pg, used only by the one-shot DDL script init_tables.js and the test harness.
+    style.css is 2,024 lines of hand-written CSS with a :root token block and no
+    Tailwind. index.html:18 loads a single CDN script. Realtime works through
+    Supabase postgres_changes subscriptions (app.js:1192-1230), not Socket.IO.
+    app.js contains zero setInterval calls, so there is no game loop; the app
+    records and settles real-card games played offline. The genuine technical
+    centre is a subset-sum DP settlement engine (app.js:1608-1654
+    findZeroSumSubsets with Int32Array(1 << n)), plus a greedy
+    minimumTransactions pass (app.js:1518-1607).
+  source: "C54-Casino/package.json; C54-Casino/app.js:1518-1607,1608-1654,1192-1230; C54-Casino/style.css; C54-Casino/index.html:18"
+  publicWording: >
+    C54 is a vanilla-JS PWA backed by Supabase Postgres and Realtime — no React, no
+    Node server, no Socket.IO, no Tailwind. The interesting part is the settlement
+    engine: a subset-sum dynamic program finds groups of players whose balances sum
+    to exactly zero, and a greedy pass then matches the largest debtor to the
+    largest creditor to minimise the number of transfers.
+
+- id: pawna-name
+  topic: Pawna project name
+  claim: "CampFlow: Hospitality Automation & Booking Suite."
+  status: contradicted
+  evidence: >
+    The string "CampFlow" does not appear anywhere in either copy of the
+    repository. The app brands itself "Lonavala Stays" (vite.config.js:26-27 sets
+    name: 'Lonavala Stays', short_name: 'Lonavala'). It is a multi-property
+    camping and villa booking platform: React 19.2 + Vite 7 + Tailwind CSS v4
+    frontend on Vercel, Express 5 + Mongoose 9 API on Render, 8 Mongoose models,
+    JWT role-scoped access. The 58 MB Flutter mobile app exists only as an
+    untracked local copy in Projects\Pawna Camping and is not part of the public
+    repo.
+  source: "Pawna-camping/vite.config.js:26-27; Pawna-camping/backend/models; Pawna-camping/package.json"
+  publicWording: >
+    The project is "Lonavala Stays" — a multi-property camping and villa booking
+    platform built with React, Express and MongoDB, deployed on Vercel and Render.
+    "CampFlow" was a name I used on the resume that never made it into the code.

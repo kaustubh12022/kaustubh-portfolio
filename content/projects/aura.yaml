@@ -1,0 +1,82 @@
+id: aura
+name: Aura
+tagline: Gemini Live voice agent for skincare support
+status: assessment
+role: Hiring assessment build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/aura-skincare-voice-cx
+live: https://aura-skincare-voice-cx.onrender.com
+featured: true
+
+stack:
+  - React
+  - Vite
+  - Express
+  - WebSocket
+  - Gemini Live
+  - Vitest
+  - Playwright
+
+summary: >
+  A real-time voice customer-support agent for a skincare brand. The browser streams
+  16 kHz PCM audio over a WebSocket to a relay that talks to Gemini Live; the model
+  responds with 24 kHz audio, can call order tools, and is interrupted cleanly when
+  the caller speaks.
+
+highlights:
+  - Speech-to-speech with Gemini Live.
+  - Barge-in and scheduled audio playback.
+  - Tool calls for order lookup and cancellation.
+  - Post-call summary with a deterministic fallback.
+  - 129 test declarations across unit, integration, and E2E suites.
+
+features:
+  - title: Audio relay
+    detail: >
+      The relay forwards 16 kHz PCM input to Gemini Live and schedules 24 kHz PCM
+      output chunks for playback. It handles interruption and reconnect paths.
+    evidence: "server/geminiLiveRelay.js:16-56; src/hooks/useVoiceAgent.js:52-63"
+  - title: Tool calls
+    detail: >
+      Gemini can call get_order_details and cancel_order. The tool results are
+      returned into the live session so the spoken answer stays grounded.
+    evidence: "server/tools.js; server/geminiLiveRelay.js"
+  - title: Post-call summary
+    detail: >
+      After the call, the server produces a structured summary and falls back to a
+      deterministic summary if the model call fails.
+    evidence: "server/summary.js"
+  - title: Test coverage
+    detail: >
+      Unit, integration, and E2E suites cover the audio path, tool calls, and UI.
+      The repo has 129 test declarations; there is no coverage report backing a
+      100% claim.
+    evidence: "tests/; playwright.config.js"
+
+metrics:
+  - label: Code lines
+    value: "7.6k"
+    note: "JS/JSX/TS/TSX"
+  - label: Test declarations
+    value: "129"
+    note: "no coverage report"
+  - label: Live status
+    value: "200"
+    note: "checked 2026-10-19"
+
+caveats:
+  - "Built as a hiring assessment; published with permission and labelled as such."
+  - "No authentication on the live app; order and reset endpoints are public."
+  - "The 122 tests / 100% coverage claim is not supported by the repo."
+
+assets:
+  - src: /media/aura/live-app.png
+    alt: Aura voice agent live interface
+    caption: "Aura live interface capture (2026)"
+    kind: screenshot
+    status: ready
+  - src: /media/aura/card.png
+    alt: Aura voice agent project card
+    caption: "Aura project card (2026)"
+    kind: card
+    status: ready

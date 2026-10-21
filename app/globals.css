@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f7f5ef;
+  --color-paper-deep: #efece2;
+  --color-ink: #14130f;
+  --color-ink-soft: #2a2822;
+  --color-muted: #6b675c;
+  --color-line: #e2ded2;
+  --color-line-strong: #cfc9b9;
+  --color-accent: #2f4bff;
+  --color-accent-soft: #e7eaff;
+  --color-code: #111214;
+  --color-live: #1c7c4a;
+  --color-warn: #a15c00;
+  --color-danger: #a32b2b;
+
+  --radius-pill: 999px;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-instrument);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  button,
+  a,
+  input,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(20, 19, 15, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 19, 15, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 38%, black 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 38%, black 25%, transparent 78%);
+}
+
+.paper-grain {
+  position: relative;
+}
+
+.paper-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+}
+
+.answer-prose {
+  color: var(--color-ink-soft);
+  font-size: 1.0625rem;
+  line-height: 1.68;
+}
+
+.answer-prose p {
+  margin: 0 0 0.85rem;
+}
+
+.answer-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.answer-prose strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.answer-prose ul {
+  margin: 0.4rem 0 0.9rem;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.answer-prose li {
+  margin: 0.25rem 0;
+}
+
+.answer-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--color-paper-deep);
+  border: 1px solid var(--color-line);
+  border-radius: 5px;
+  padding: 0.08em 0.32em;
+}
+
+.answer-prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 999px;
+}
+
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--color-accent);
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(20, 19, 15, 0.04) 25%,
+    rgba(20, 19, 15, 0.08) 37%,
+    rgba(20, 19, 15, 0.04) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

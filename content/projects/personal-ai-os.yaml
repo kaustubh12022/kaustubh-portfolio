@@ -1,0 +1,85 @@
+id: personal-ai-os
+name: Personal AI OS
+tagline: Chat-driven personal productivity app
+status: prototype
+role: Solo build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/personal-ai-os
+live: null
+featured: true
+
+stack:
+  - Flutter
+  - Dart
+  - Riverpod
+  - Supabase
+  - Deno
+  - TypeScript
+  - Gemini
+  - Groq
+
+summary: >
+  A Flutter personal assistant that turns chat into actions: add tasks, log
+  expenses, set budgets, and ask for summaries. A Deno edge function routes intents
+  to Gemini with a Groq fallback, while a regex fast-path handles simple commands
+  without spending tokens.
+
+highlights:
+  - Chat actions for tasks, expenses, budgets, and recurring habits.
+  - Zero-token regex fast-path for simple commands.
+  - JSON-validated intent contract with server-side execution.
+  - Inline charts and tables in the chat.
+  - Supabase Realtime updates across screens.
+
+features:
+  - title: Intent routing
+    detail: >
+      The edge function first applies a regex fast-path for simple commands. If the
+      request needs language understanding, it calls Gemini with a JSON intent
+      contract and falls back to Groq if Gemini is unavailable.
+    evidence: "supabase/functions/chat/index.ts:92-614"
+  - title: Chat-driven actions
+    detail: >
+      The returned intent and payload are validated, then executed against Postgres:
+      create a task, log an expense, update a budget, or query a summary.
+    evidence: "supabase/functions/chat/index.ts"
+  - title: Inline visual responses
+    detail: >
+      The Flutter chat renders markdown, charts, and tables so a spending or task
+      answer is visual without leaving the conversation.
+    evidence: "lib/features/chat"
+  - title: Realtime state
+    detail: >
+      Supabase channels keep tasks, expenses, and dashboards in sync while the app
+      is open.
+    evidence: "lib/core/supabase"
+
+metrics:
+  - label: Code lines
+    value: "4.0k"
+    note: "Dart/TS/SQL"
+  - label: Test declarations
+    value: "23"
+    note: "widget + unit"
+  - label: Git commits
+    value: "2"
+    note: "early prototype"
+
+caveats:
+  - "The resume's Python/Ollama/LangChain/FastAPI/SQLite stack is wrong for this repo."
+  - "No voice pipeline; chat is text-only."
+  - "No provider tool calling; the edge function executes JSON intents."
+  - "No RLS and no auth in the audited schema; do not expose it as a public service."
+  - "The second_brain.embedding table is unused; this is not a working RAG system."
+
+assets:
+  - src: /media/personal-ai-os/card.png
+    alt: Personal AI OS project card
+    caption: "Project card; in-app capture pending."
+    kind: card
+    status: ready
+  - src: /media/personal-ai-os/chat.png
+    alt: Personal AI OS chat screen
+    caption: "Chat capture needed (Phase 6)."
+    kind: screenshot
+    status: needed

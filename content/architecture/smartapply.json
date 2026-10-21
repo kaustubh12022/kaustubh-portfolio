@@ -1,0 +1,36 @@
+{
+  "id": "smartapply",
+  "title": "SmartApply pipeline",
+  "subtitle": "Six stages from raw postings to tailored PDFs",
+  "direction": "horizontal",
+  "columns": [
+    { "id": "input", "label": "Input" },
+    { "id": "filter", "label": "Filter" },
+    { "id": "ai", "label": "AI" },
+    { "id": "output", "label": "Output" },
+    { "id": "track", "label": "Track" }
+  ],
+  "nodes": [
+    { "id": "scrape", "label": "Scrape", "detail": "JobSpy + 8 scrapers", "column": 0, "tone": "ink" },
+    { "id": "normalize", "label": "Normalize", "detail": "dedupe + parse", "column": 0, "tone": "muted" },
+    { "id": "regex", "label": "Regex filter", "detail": "role + seniority rules", "column": 1, "tone": "ink" },
+    { "id": "score", "label": "DeepSeek score", "detail": "JSON mode + jd_cache", "column": 2, "tone": "accent" },
+    { "id": "shortlist", "label": "Shortlist", "detail": "fit + ATS threshold", "column": 2, "tone": "muted" },
+    { "id": "tailor", "label": "Tailor resume", "detail": "locked facts + 3+2+2", "column": 3, "tone": "ink" },
+    { "id": "pdf", "label": "Render PDF", "detail": "Jinja2 + Playwright", "column": 3, "tone": "muted" },
+    { "id": "dashboard", "label": "Track", "detail": "SQLite / Supabase + React", "column": 4, "tone": "accent" }
+  ],
+  "edges": [
+    { "from": "scrape", "to": "normalize" },
+    { "from": "normalize", "to": "regex", "label": "3,360 raw" },
+    { "from": "regex", "to": "score", "label": "1,032 scored" },
+    { "from": "score", "to": "shortlist" },
+    { "from": "shortlist", "to": "tailor" },
+    { "from": "tailor", "to": "pdf" },
+    { "from": "pdf", "to": "dashboard", "label": "tracked" }
+  ],
+  "notes": [
+    "The 3,360 -> 1,032 numbers are from one recorded batch (2026-10-05), not a daily rate.",
+    "The first scoring call is serial to warm the provider cache; the rest use asyncio.gather."
+  ]
+}

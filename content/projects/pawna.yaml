@@ -1,0 +1,85 @@
+id: pawna
+name: Pawna Camping
+tagline: Multi-property booking and operations platform
+status: live
+role: Full-stack build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/Pawna-camping
+live: https://pawna-camping.vercel.app
+featured: true
+
+stack:
+  - React
+  - Vite
+  - Tailwind CSS
+  - Node.js
+  - Express
+  - MongoDB
+  - Mongoose
+  - JWT
+  - Cloudinary
+  - PWA
+
+summary: >
+  A booking and operations platform for Pawna lake camping. Visitors check
+  availability, configure guests and packages, and book. Owners and managers get
+  role-scoped dashboards for properties, bookings, blocked dates, and revenue.
+
+highlights:
+  - Weekday/weekend pricing with per-person and whole-villa logic.
+  - Blocked-date and capacity overlap checks before a booking.
+  - Owner-scoped JWT access to properties, bookings, and analytics.
+  - Cloudinary media uploads and a PWA shell.
+
+features:
+  - title: Availability and pricing
+    detail: >
+      The booking controller checks blocked dates, guest capacity, and
+      weekday/weekend rules, then computes the total from the selected package and
+      guest count.
+    evidence: "backend/controllers/bookingController.js"
+  - title: Role-scoped operations
+    detail: >
+      JWT middleware scopes owners and managers to their properties. Dashboards
+      expose bookings, revenue, and commission views.
+    evidence: "backend/middleware/auth.js; backend/routes"
+  - title: Property and media management
+    detail: >
+      Owners create properties, upload images through Cloudinary, and manage
+      packages and blocked dates.
+    evidence: "backend/models/Property.js; backend/routes/properties.js"
+  - title: PWA experience
+    detail: >
+      The React frontend ships a manifest, installable shell, and responsive
+      booking flow; the API is deployed separately on Render.
+    evidence: "frontend/public/manifest.json; vercel.json; render.yaml"
+
+metrics:
+  - label: Code lines
+    value: "17.2k"
+    note: "JS/JSX, excluding vendor"
+  - label: Git commits
+    value: "20"
+    note: "Mar-Sep 2026"
+  - label: Properties in live audit
+    value: "3"
+    note: "one owner; not a customer count"
+
+caveats:
+  - "Booking creation has no database transaction or lock; simultaneous requests can race."
+  - "User.plainPassword is stored and returned by an owner endpoint; remove it."
+  - "The public properties endpoint leaks owner email; shape the response."
+  - "It is one Express monolith, not microservices."
+  - "Web-push exists but the owner subscription flow is incomplete."
+
+assets:
+  - src: /media/pawna/cover.webp
+    alt: Pawna lake camping property at dusk
+    caption: "Property photo from the project; UI capture pending."
+    kind: photo
+    status: ready
+  - src: /media/pawna/booking-flow.png
+    alt: Pawna booking flow screenshot
+    caption: "Booking flow capture needed (Phase 6)."
+    kind: screenshot
+    status: needed

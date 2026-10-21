@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next
+.next/
+out/
+build/
+dist/
+
+# env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# test / tooling
+coverage/
+playwright-report/
+test-results/
+blob-report/
+promptfoo/.cache/
+promptfoo/output/
+*.tsbuildinfo
+next-env.d.ts
+
+# os
+.DS_Store
+Thumbs.db
+
+# local media / large captures
+public/media/**/*.mp4
+public/media/**/*.webm
+public/media/**/*.mov
+!public/media/.gitkeep
+.neon
+
+# local index artifacts
+data/

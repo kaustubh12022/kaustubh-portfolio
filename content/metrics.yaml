@@ -1,0 +1,167 @@
+- id: smartapply-batch-raw
+  project: smartapply
+  label: Raw postings in the recorded batch
+  value: "3,360"
+  method: Single recorded batch; not a daily rate.
+  source: "JobHunt-Automation/full_matrix_results.json"
+  verifiedAt: "2026-10-05"
+
+- id: smartapply-batch-dropped
+  project: smartapply
+  label: Postings dropped by the pandas/regex filter
+  value: "2,328"
+  method: Recorded batch; filter stage.
+  source: "JobHunt-Automation/full_matrix_results.json"
+  verifiedAt: "2026-10-05"
+
+- id: smartapply-batch-scored
+  project: smartapply
+  label: Postings scored by DeepSeek
+  value: "1,032"
+  method: Recorded batch; 69.3% fewer scoring calls than the raw set.
+  source: "JobHunt-Automation/full_matrix_results.json"
+  verifiedAt: "2026-10-05"
+
+- id: smartapply-batch-shortlisted
+  project: smartapply
+  label: Shortlisted from the 14 Oct batch
+  value: "17"
+  method: 39 URLs -> 35 parsed -> 17 shortlisted; separate from the 3,360 batch.
+  source: "JobHunt-Automation/batch_summary_report.json"
+  verifiedAt: "2026-10-14"
+
+- id: smartapply-code-lines
+  project: smartapply
+  label: Code lines (excluding vendor)
+  value: "39,699"
+  method: Python/JS/JSX/TS/TSX/SQL/HTML/CSS, repository audit.
+  source: "JobHunt-Automation"
+  verifiedAt: "2026-10-19"
+
+- id: smartapply-tests
+  project: smartapply
+  label: Test functions
+  value: "455"
+  method: Static count of pytest/vitest test declarations.
+  source: "JobHunt-Automation/tests; frontend/src/**/*.test.*"
+  verifiedAt: "2026-10-19"
+
+- id: smartapply-commits
+  project: smartapply
+  label: Git commits
+  value: "18"
+  method: git log on the audited snapshot.
+  source: "JobHunt-Automation"
+  verifiedAt: "2026-10-19"
+
+- id: pawna-code-lines
+  project: pawna
+  label: Code lines (excluding vendor)
+  value: "17,244"
+  method: JS/JSX/TS/TSX/SQL/HTML/CSS, repository audit.
+  source: "Pawna-camping"
+  verifiedAt: "2026-10-19"
+
+- id: pawna-commits
+  project: pawna
+  label: Git commits
+  value: "20"
+  method: git log on the audited snapshot.
+  source: "Pawna-camping"
+  verifiedAt: "2026-10-19"
+
+- id: pawna-properties
+  project: pawna
+  label: Properties visible in the live audit
+  value: "3"
+  method: Live API audit; one owner. Not a customer count.
+  source: "Pawna-camping live API"
+  verifiedAt: "2026-10-19"
+
+- id: c54-code-lines
+  project: c54
+  label: Code lines
+  value: "4,703"
+  method: JS/HTML/CSS, repository audit.
+  source: "C54-Casino"
+  verifiedAt: "2026-10-19"
+
+- id: c54-tests
+  project: c54
+  label: Test assertions
+  value: "39"
+  method: Static count in test_suite.js.
+  source: "C54-Casino/test_suite.js"
+  verifiedAt: "2026-10-19"
+
+- id: c54-commits
+  project: c54
+  label: Git commits
+  value: "23"
+  method: git log on the audited snapshot.
+  source: "C54-Casino"
+  verifiedAt: "2026-10-19"
+
+- id: personal-ai-os-code-lines
+  project: personal-ai-os
+  label: Code lines
+  value: "3,959"
+  method: Dart/TS/SQL, repository audit.
+  source: "personal-ai-os"
+  verifiedAt: "2026-10-19"
+
+- id: personal-ai-os-tests
+  project: personal-ai-os
+  label: Test declarations
+  value: "23"
+  method: Static count of widget/unit tests.
+  source: "personal-ai-os/test"
+  verifiedAt: "2026-10-19"
+
+- id: aura-code-lines
+  project: aura
+  label: Code lines
+  value: "7,615"
+  method: JS/JSX/TS/TSX, repository audit.
+  source: "aura-skincare-voice-cx"
+  verifiedAt: "2026-10-19"
+
+- id: aura-tests
+  project: aura
+  label: Test declarations
+  value: "129"
+  method: Static count across unit/integration/E2E suites; no coverage report.
+  source: "aura-skincare-voice-cx/tests"
+  verifiedAt: "2026-10-19"
+
+- id: dayscore-code-lines
+  project: dayscore
+  label: Code lines
+  value: "2,794"
+  method: JS/HTML/CSS, repository audit.
+  source: "DayScore"
+  verifiedAt: "2026-10-19"
+
+- id: copilot-code-lines
+  project: copilot
+  label: Code lines (excluding package-lock)
+  value: "761"
+  method: Static line count of every git-tracked file except package-lock.json, .gitignore and .env.local.example.
+  source: "personal-application-copilot"
+  verifiedAt: "2026-10-21"
+
+- id: copilot-knowledge-lines
+  project: copilot
+  label: Knowledge base length
+  value: "113"
+  method: Static line count of context/knowledge_graph.md, the entire answer corpus.
+  source: "personal-application-copilot/context/knowledge_graph.md"
+  verifiedAt: "2026-10-21"
+
+- id: copilot-api-routes
+  project: copilot
+  label: API routes
+  value: "1"
+  method: Count of route files under app/api that export an HTTP handler.
+  source: "personal-application-copilot/app/api"
+  verifiedAt: "2026-10-21"

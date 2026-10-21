@@ -1,0 +1,102 @@
+id: smartapply
+name: SmartApply
+tagline: AI-driven job automation pipeline
+status: prototype
+role: Solo build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/JobHunt-Automation
+live: null
+featured: true
+
+stack:
+  - Python
+  - AsyncIO
+  - DeepSeek
+  - Flask
+  - React
+  - SQLite
+  - Supabase
+  - Playwright
+
+summary: >
+  A six-stage pipeline that scrapes entry-level job postings, filters them with
+  regex heuristics, scores the survivors with DeepSeek, tailors an ATS-oriented
+  resume for each shortlisted job, renders PDFs, and tracks applications in a React
+  dashboard.
+
+highlights:
+  - Regex prefilter cuts LLM scoring calls before they are spent.
+  - DeepSeek JSON scoring with schema validation and a job-description cache.
+  - ATS resume generation with locked facts and Playwright PDF rendering.
+  - Flask + SSE API with a React operations dashboard.
+
+features:
+  - title: Cost-aware LLM scoring
+    detail: >
+      A regex/pandas filter removes out-of-scope roles before the model sees them.
+      The first scoring call runs serially to warm the provider cache, then the rest
+      fan out with asyncio.gather. Identical job descriptions hit jd_cache.
+    evidence: "src/scorer.py:549-559; src/ai_engine.py:38-56"
+  - title: Structured scoring
+    detail: >
+      DeepSeek returns JSON that is validated before it touches the database.
+      Scores, missing skills, and fit labels are persisted per job.
+    evidence: "src/scorer.py; src/ai_engine.py"
+  - title: ATS resume tailoring
+    detail: >
+      Personal details, education, employers, and dates are locked. The tailor
+      prunes non-inventory skills, selects three projects, and enforces 3+2+2
+      bullets before rendering.
+    evidence: "src/resume_tailor.py"
+  - title: PDF rendering and verification
+    detail: >
+      Jinja2 HTML is rendered to A4 with Playwright Chromium, then checked for ATS
+      issues with pypdf/PyMuPDF. WeasyPrint is not used.
+    evidence: "src/pdf_generator.py; ats_verifier.py"
+  - title: Operations dashboard
+    detail: >
+      A React dashboard exposes scanning, job cards, a tracker, and a Kanban view.
+      The Flask API streams progress over SSE.
+    evidence: "frontend/src; app.py"
+
+metrics:
+  - label: Raw postings in recorded batch
+    value: "3,360"
+    note: "2026-10-05"
+  - label: Scored after filtering
+    value: "1,032"
+    note: "69% fewer scoring calls"
+  - label: Code lines
+    value: "39.7k"
+    note: "excluding vendor"
+  - label: Test functions
+    value: "455"
+    note: "pytest + vitest"
+
+caveats:
+  - "The Flask API has no authentication; it is not exposed publicly."
+  - "Supabase RLS is disabled in the audited schema."
+  - "2,000+/day and >80% cost reduction are not measured as stated."
+  - "The repo is a working prototype, not a hosted product."
+
+assets:
+  - src: /media/smartapply/dashboard-tracker.png
+    alt: SmartApply application tracker with job cards and status columns
+    caption: "SmartApply tracker, verified screenshot (2026)"
+    kind: screenshot
+    status: ready
+  - src: /media/smartapply/dashboard-scanning.png
+    alt: SmartApply scanning view with live pipeline progress
+    caption: "SmartApply scanning view, verified screenshot (2026)"
+    kind: screenshot
+    status: ready
+  - src: /media/smartapply/dashboard-mobile.png
+    alt: SmartApply tracker on a mobile viewport
+    caption: "SmartApply mobile tracker, verified screenshot (2026)"
+    kind: screenshot
+    status: ready
+  - src: /media/smartapply/job-cards.png
+    alt: SmartApply job cards with match badges
+    caption: "SmartApply job cards and badges, verified screenshot (2026)"
+    kind: screenshot
+    status: ready

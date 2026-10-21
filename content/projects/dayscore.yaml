@@ -1,0 +1,55 @@
+id: dayscore
+name: DayScore
+tagline: Offline-first daily tracking PWA
+status: live
+role: Solo build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/DayScore
+live: https://day-score-three.vercel.app
+featured: false
+
+stack:
+  - JavaScript
+  - PWA
+  - localStorage
+  - Firebase
+
+summary: >
+  A small offline-first PWA for scoring the day across a few personal metrics, with
+  streaks, history, and optional Firebase sync.
+
+highlights:
+  - Works offline with localStorage.
+  - Installable PWA shell.
+  - Optional Firebase sync.
+  - Compact mobile-first UI.
+
+features:
+  - title: Offline-first state
+    detail: >
+      Daily scores are stored locally and the app remains usable without a network.
+      Firebase is optional for sync.
+    evidence: "app.js; firebase-config.js"
+  - title: PWA shell
+    detail: >
+      Manifest and service worker make the app installable and cache the shell.
+    evidence: "manifest.json; sw.js"
+
+metrics:
+  - label: Code lines
+    value: "2.8k"
+    note: "vanilla JS/HTML/CSS"
+  - label: Live status
+    value: "200"
+    note: "checked 2026-10-19"
+
+caveats:
+  - "Small project; no test suite."
+  - "Two commits; not a flagship engineering story."
+
+assets:
+  - src: /media/dayscore/icon-512.png
+    alt: DayScore app icon
+    caption: "DayScore PWA icon; UI capture pending."
+    kind: icon
+    status: ready

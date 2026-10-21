@@ -1,0 +1,74 @@
+id: c54
+name: C54
+tagline: Card-score tracking and settlement engine
+status: live
+role: Solo build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/C54-Casino
+live: https://c54-casino.vercel.app
+featured: true
+
+stack:
+  - JavaScript
+  - PWA
+  - Supabase
+  - PostgreSQL
+  - Supabase Realtime
+
+summary: >
+  A host-authoritative card-score tracker for a 54-card group game. The host enters
+  rounds, everyone sees a live scoreboard, and the app computes the minimum set of
+  transfers that settles all debts.
+
+highlights:
+  - Exact subset-DP settlement for up to 15 players, with a greedy fallback.
+  - Integer-paise arithmetic to avoid floating-point drift.
+  - Live scoreboard over Supabase Realtime.
+  - 39 assertions covering the settlement engine.
+
+features:
+  - title: Settlement engine
+    detail: >
+      The engine computes each player's net balance, then finds the minimum number
+      of transfers using exact subset DP for small groups and a greedy pass for
+      larger ones. All amounts are integer paise.
+    evidence: "app.js; test_suite.js"
+  - title: Live session
+    detail: >
+      The host writes the session JSON; guests subscribe to the Supabase Realtime
+      channel and see the scoreboard update. The host is the source of truth.
+    evidence: "app.js; init_tables.js"
+  - title: PWA shell
+    detail: >
+      Installable mobile-first UI with offline caching for the shell and a compact
+      score-entry flow.
+    evidence: "manifest.json; service-worker.js"
+
+metrics:
+  - label: Code lines
+    value: "4.7k"
+    note: "vanilla JS/HTML/CSS"
+  - label: Test assertions
+    value: "39"
+    note: "settlement + helpers"
+  - label: Git commits
+    value: "23"
+    note: "Jun-Sep 2026"
+
+caveats:
+  - "Not a playable casino and not Socket.IO; it is a host-authoritative scoreboard."
+  - "Hardcoded Supabase credentials are present in the repo; rotate them now."
+  - "RLS policies allow anon reads/inserts/updates; tighten before sharing the live demo."
+  - "Guests are read-only; there is no concurrent per-player gameplay."
+
+assets:
+  - src: /media/c54/icon-512.png
+    alt: C54 app icon
+    caption: "C54 PWA icon; UI capture pending."
+    kind: icon
+    status: ready
+  - src: /media/c54/scoreboard.png
+    alt: C54 live scoreboard
+    caption: "Scoreboard capture needed (Phase 6)."
+    kind: screenshot
+    status: needed

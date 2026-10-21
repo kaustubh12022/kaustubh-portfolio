@@ -1,0 +1,77 @@
+id: copilot
+name: Personal Application Copilot
+tagline: Job-application answers from a curated knowledge base
+status: prototype
+role: Solo build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/personal-application-copilot
+live: null
+featured: false
+
+stack:
+  - Next.js
+  - React
+  - TypeScript
+  - Tailwind CSS
+  - DeepSeek
+  - Vercel
+
+summary: >
+  A small Next.js 14 App Router chat app that answers job-application questions
+  from a hand-written Markdown knowledge base, calling the DeepSeek REST API
+  directly. The system prompt and the knowledge file are concatenated once at
+  module scope so the provider's prefix cache always sees the same bytes. It is
+  761 lines, one API route and two commits.
+
+highlights:
+  - Byte-stable system prefix so the provider's automatic prefix cache hits.
+  - "15-minute in-memory answer cache with an X-Cache: HIT or MISS header."
+  - Strict 5-6 sentence budget plus an explicit "I haven't built that" rule.
+  - Every model reply is normalised to plain ASCII before it reaches the UI.
+
+features:
+  - title: Stable prefix for provider caching
+    detail: >
+      The system prompt and the knowledge file are read once at module scope and
+      concatenated into one system message, so every request sends identical
+      prefix bytes and the provider's automatic prefix cache can serve it.
+    evidence: "app/api/chat/route.ts:42-54"
+  - title: Answer cache
+    detail: >
+      Identical normalised questions are served from a 15-minute in-memory map
+      that is FIFO-capped at 200 entries, and every response carries an X-Cache:
+      HIT or MISS header.
+    evidence: "app/api/chat/route.ts:57-62,84-97,148-153"
+  - title: Answer discipline
+    detail: >
+      The system prompt caps standard answers at 5-6 sentences, formats
+      multiple-choice questions as [x] and [ ] lines in the original option
+      order, and requires the model to say "I haven't built that" for anything
+      not present in the knowledge base.
+    evidence: "app/api/chat/route.ts:5-40"
+  - title: Curated knowledge base
+    detail: >
+      context/knowledge_graph.md is the whole corpus: 113 lines and 14 KB
+      covering identity, skills, experience and each project. It is read from disk
+      at cold start; nothing is retrieved, embedded or ranked.
+    evidence: "context/knowledge_graph.md; app/api/chat/route.ts:42-49"
+
+metrics:
+  - label: Code lines
+    value: "761"
+    note: "tracked files, excluding package-lock.json"
+  - label: Knowledge base
+    value: "113"
+    note: "lines in context/knowledge_graph.md"
+  - label: API routes
+    value: "1"
+    note: "app/api/chat/route.ts"
+
+caveats:
+  - "The answer cache is in-memory and per serverless instance: a cold start starts empty and two instances do not share it."
+  - "The knowledge file is read with fs.readFileSync on process.cwd() and next.config.mjs has no outputFileTracingIncludes, so a serverless bundle can silently fall back to the one-line summary string."
+  - "The knowledge base is hand-written Markdown, not retrieved; there is no vector store, ranking or embedding step."
+  - "The README's 96%+ cache-hit and ~90% cost-saving figures are not measured anywhere in the repo."
+  - "Two commits, one API route and no test suite; this is a side project, not a flagship build."
+
+assets: []
