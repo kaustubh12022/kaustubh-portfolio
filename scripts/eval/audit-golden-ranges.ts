@@ -229,7 +229,7 @@ for (const question of questions) {
               {
                 path: otherPath,
                 startLine: span.lo,
-                endLine: span.endLine,
+                endLine: span.hi,
                 symbol,
               },
             );
@@ -267,7 +267,7 @@ for (const question of questions) {
           {
             path: evidence.path,
             startLine: span.lo,
-            endLine: span.endLine,
+            endLine: span.hi,
             symbol,
           },
         );

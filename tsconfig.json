@@ -38,8 +38,6 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts/eval",
-    "scripts/mcp",
     "evals"
   ]
 }

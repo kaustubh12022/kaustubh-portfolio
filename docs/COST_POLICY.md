@@ -171,7 +171,7 @@ boundary will cost slightly more than the estimate.
 1. Change the code.
 2. npx tsc --noEmit                      # free
 3. npx vitest run                        # free
-4. npx tsx scripts/eval/retrieval-eval.ts # free - no LLM
+4. NODE_OPTIONS=--conditions=react-server npx tsx scripts/eval/retrieval-eval.ts # free - no LLM
 5. npx tsx scripts/eval/golden-eval.ts --take=<bucket>:<n> --max-spend=0.15
 6. Report the numbers.
 ```

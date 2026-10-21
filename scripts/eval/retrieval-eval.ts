@@ -438,14 +438,6 @@ export function isImplementationPath(path: string): boolean {
   return true;
 }
 
-/**
- * The full line span of every symbol in the index.
- *
- * Used by the "expand to the enclosing function" diagnostic: when the
- * retriever returns ONE chunk of a long function, the model is handed a
- * fragment. The fix is to expand the hit to the whole function, so the
- * chunk it was scored on contains the code that answers the question.
- */
 /* ------------------------------------------------------------------ */
 /* Aggregate                                                           */
 /* ------------------------------------------------------------------ */
@@ -619,6 +611,45 @@ const implementationOnly = {
       ? 0
       : scored.reduce(
           (sum, item) => sum + item.metrics.implementationOnly.pathRecallAt5,
+          0,
+        ) / scored.length,
+};
+
+/** The same aggregate, with every hit expanded to its whole function. */
+const expandedToFunction = {
+  recallAt5:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.expandedToFunction.recallAt5,
+          0,
+        ) / scored.length,
+  recallAt10:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.expandedToFunction.recallAt10,
+          0,
+        ) / scored.length,
+  mrrAt10:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.expandedToFunction.mrrAt10,
+          0,
+        ) / scored.length,
+  hitRateAt10:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.expandedToFunction.hitRateAt10,
+          0,
+        ) / scored.length,
+  pathRecallAt5:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.expandedToFunction.pathRecallAt5,
           0,
         ) / scored.length,
 };
