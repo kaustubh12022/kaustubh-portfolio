@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@huggingface/transformers",
     "onnxruntime-node",
+    "onnxruntime-common",
     "sharp",
   ],
   /**
@@ -35,6 +36,7 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/lib/**/*",
       "./node_modules/onnxruntime-node/package.json",
+      "./node_modules/onnxruntime-common/**/*",
     ],
     "/api/health": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
@@ -42,6 +44,7 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/lib/**/*",
       "./node_modules/onnxruntime-node/package.json",
+      "./node_modules/onnxruntime-common/**/*",
     ],
     "/mcp": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
@@ -49,6 +52,7 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/lib/**/*",
       "./node_modules/onnxruntime-node/package.json",
+      "./node_modules/onnxruntime-common/**/*",
     ],
   },
   outputFileTracingExcludes: {
