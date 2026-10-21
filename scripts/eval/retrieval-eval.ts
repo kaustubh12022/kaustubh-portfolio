@@ -198,6 +198,27 @@ function firstRelevantRank(
 
 const records: QuestionRecord[] = [];
 
+/**
+ * The full line span of every symbol in the index.
+ *
+ * Used by the "expand to the enclosing function" diagnostic: when the
+ * retriever returns ONE chunk of a long function, the model is handed a
+ * fragment. The fix is to expand the hit to the whole function, so the
+ * chunk it was scored on contains the code that answers the question.
+ */
+const SYMBOL_SPANS = new Map<string, { lo: number; hi: number }>();
+
+/**
+ * What the numbers would be if every hit were expanded to the whole
+ * function it belongs to.
+ */
+function expandToSymbol(hit: HitRecord): HitRecord {
+  if (!hit.symbol) return hit;
+  const span = SYMBOL_SPANS.get(`${hit.projectId}::${hit.path}::${hit.symbol}`);
+  if (!span) return hit;
+  return { ...hit, startLine: span.lo, endLine: span.hi };
+}
+
 /* The symbol spans, read once. */
 {
   const { query } = await import("@/lib/retrieval/db.js");
@@ -425,19 +446,6 @@ export function isImplementationPath(path: string): boolean {
  * fragment. The fix is to expand the hit to the whole function, so the
  * chunk it was scored on contains the code that answers the question.
  */
-const SYMBOL_SPANS = new Map<string, { lo: number; hi: number }>();
-
-/**
- * What the numbers would be if every hit were expanded to the whole
- * function it belongs to.
- */
-function expandToSymbol(hit: HitRecord): HitRecord {
-  if (!hit.symbol) return hit;
-  const span = SYMBOL_SPANS.get(`${hit.projectId}::${hit.path}::${hit.symbol}`);
-  if (!span) return hit;
-  return { ...hit, startLine: span.lo, endLine: span.hi };
-}
-
 /* ------------------------------------------------------------------ */
 /* Aggregate                                                           */
 /* ------------------------------------------------------------------ */

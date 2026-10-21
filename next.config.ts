@@ -24,10 +24,11 @@ const nextConfig: NextConfig = {
    * the chat endpoint, the health check, and the MCP server.
    */
   outputFileTracingIncludes: {
-    "/api/chat": ["./models/all-MiniLM-L6-v2/**/*"],
-    "/api/health": ["./models/all-MiniLM-L6-v2/**/*"],
-    "/mcp": ["./models/all-MiniLM-L6-v2/**/*"],
+    "/api/chat": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
+    "/api/health": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
+    "/mcp": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
   },
 };
 
 export default nextConfig;
+

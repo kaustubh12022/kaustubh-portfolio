@@ -62,11 +62,15 @@ export const MODEL_CACHE_DIR =
  * Bundling the weights removes the network dependency and the ~12 second
  * cold-start download. The CDN stays as a fallback for a local checkout
  * that does not have the folder.
+ *
+ * The path mirrors the Hugging Face model id (`Xenova/all-MiniLM-L6-v2`)
+ * because `env.localModelPath` is joined with the model id, not with a
+ * flat folder name. A folder called `models/all-MiniLM-L6-v2` is NOT found.
  */
 export const BUNDLED_MODEL_DIR = path.join(
   process.cwd(),
   "models",
-  "all-MiniLM-L6-v2",
+  EMBEDDING_MODEL,
 );
 
 /** True when the bundled model is present on disk. */
