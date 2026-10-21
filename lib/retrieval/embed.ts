@@ -66,18 +66,53 @@ export const MODEL_CACHE_DIR =
  * The path mirrors the Hugging Face model id (`Xenova/all-MiniLM-L6-v2`)
  * because `env.localModelPath` is joined with the model id, not with a
  * flat folder name. A folder called `models/all-MiniLM-L6-v2` is NOT found.
+ *
+ * WHY SEVERAL CANDIDATE ROOTS
+ * ----------------------------
+ * `process.cwd()` is not the same directory in every host:
+ *   - a local `next dev` / `next start` runs from the project root;
+ *   - a Vercel serverless function runs from the task root, where the traced
+ *     files are placed relative to the project root, but the layout of that
+ *     task root differs between the build output (`out/`) and the runtime
+ *     bundle.
+ * Rather than guess, every plausible root is probed and the first one that
+ * actually contains the weights wins. If none does, the CDN is used.
  */
-export const BUNDLED_MODEL_DIR = path.join(
-  process.cwd(),
-  "models",
-  EMBEDDING_MODEL,
-);
+const MODEL_ROOT_CANDIDATES = [
+  path.join(process.cwd(), "models"),
+  path.join(process.cwd(), "src", "models"),
+  path.join(process.cwd(), "..", "models"),
+  path.join(process.cwd(), "..", "..", "models"),
+  path.join(process.cwd(), "..", "..", "..", "models"),
+  path.join(process.cwd(), "..", "..", "..", "..", "models"),
+  path.join(process.cwd(), "..", "..", "..", "..", "..", "models"),
+];
+
+/**
+ * Find the bundled model, if it is there.
+ *
+ * @returns the root directory that contains the model, or `null`.
+ */
+export function findBundledModelRoot(): string | null {
+  for (const root of MODEL_ROOT_CANDIDATES) {
+    if (
+      existsSync(
+        path.join(root, EMBEDDING_MODEL, "onnx", "model_quantized.onnx"),
+      )
+    ) {
+      return root;
+    }
+  }
+  return null;
+}
+
+/** The root the model was found at, or the project-root default. */
+export const BUNDLED_MODEL_DIR =
+  findBundledModelRoot() ?? path.join(process.cwd(), "models");
 
 /** True when the bundled model is present on disk. */
 export function hasBundledModel(): boolean {
-  return existsSync(
-    path.join(BUNDLED_MODEL_DIR, "onnx", "model_quantized.onnx"),
-  );
+  return findBundledModelRoot() !== null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -95,10 +130,19 @@ export function hasBundledModel(): boolean {
 export class EmbeddingUnavailableError extends Error {
   override readonly name = "EmbeddingUnavailableError";
   readonly reason: string;
+  /**
+   * The roots that were probed for a bundled model.
+   *
+   * When the model cannot be loaded this is the first thing to look at: if
+   * every candidate is listed and none of them held the weights, the
+   * deployment is missing the folder, not the code.
+   */
+  readonly probedPaths: string[];
 
-  constructor(message: string, reason?: string) {
+  constructor(message: string, reason?: string, probedPaths: string[] = []) {
     super(message);
     this.reason = reason ?? "unknown";
+    this.probedPaths = probedPaths;
   }
 }
 
@@ -135,7 +179,7 @@ async function loadExtractor(): Promise<Extractor> {
     // download, and the serverless instance can answer immediately.
     env.allowLocalModels = true;
     env.allowRemoteModels = false;
-    env.localModelPath = BUNDLED_MODEL_DIR;
+    env.localModelPath = findBundledModelRoot()!;
     env.cacheDir = MODEL_CACHE_DIR;
   } else {
     // A local checkout without the bundled folder falls back to the CDN.
@@ -162,12 +206,18 @@ export function getEmbeddingModel(): Promise<Extractor> {
       // the process for its whole lifetime.
       extractorPromise = null;
       const detail = error instanceof Error ? error.message : String(error);
+      const bundled = hasBundledModel();
       throw new EmbeddingUnavailableError(
-        `The embedding model "${EMBEDDING_MODEL}" could not be loaded from ` +
-          `huggingface.co. It is cached in ${MODEL_CACHE_DIR} after the first ` +
-          `successful download, so an offline machine only works once that ` +
-          `cache exists.`,
+        bundled
+          ? `The embedding model "${EMBEDDING_MODEL}" is bundled at ` +
+            `${BUNDLED_MODEL_DIR} but could not be loaded: ${detail}`
+          : `The embedding model "${EMBEDDING_MODEL}" could not be loaded. ` +
+            `No bundled copy was found (probed: ${MODEL_ROOT_CANDIDATES.join(", ")}), ` +
+            `so the download from huggingface.co was attempted and failed. ` +
+            `It is cached in ${MODEL_CACHE_DIR} after the first successful ` +
+            `download, so an offline machine only works once that cache exists.`,
         detail,
+        MODEL_ROOT_CANDIDATES,
       );
     });
   }
