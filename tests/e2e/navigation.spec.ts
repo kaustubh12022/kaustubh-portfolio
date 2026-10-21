@@ -21,21 +21,26 @@ import { expect, test } from "@playwright/test";
  * test documents the EXPECTED behaviour and is marked as a known failure.
  * The suite stays green; the day the deep link is wired up, this test starts
  * running and it has to pass.
+ *
+ * THE DEEP LINK IS NOW WIRED. `PortfolioChat.tsx` reads the `q` parameter
+ * inside a Suspense boundary, pre-fills the textarea and focuses it. This
+ * test runs again, and it fails if that ever regresses.
  */
 test("the 'Ask about this project' deep link pre-fills the composer", async ({
   page,
 }) => {
-  test.fixme(
-    true,
-    "app/projects/[slug]/page.tsx:519-526 links to /?q=... but nothing reads useSearchParams, so the composer is not pre-filled",
-  );
-
   await page.goto("/projects/smartapply");
 
   await page.getByRole("link", { name: /How does SmartApply work\?/ }).click();
 
   // The question has to arrive in the query string ...
-  await expect(page).toHaveURL(/\?q=How\+does\+SmartApply\+work%3F/);
+  //
+  // The encoding of the spaces is not fixed: Next.js renders the link with
+  // `%20`, and a hand-written link would use `+`. Both are the same
+  // parameter, so the assertion accepts either.
+  await expect(page).toHaveURL(
+    /\?q=How(?:\+|%20)does(?:\+|%20)SmartApply(?:\+|%20)work%3F/,
+  );
 
   // ... and pre-fill the composer on the home page.
   await expect(page.locator("#portfolio-composer")).toHaveValue(

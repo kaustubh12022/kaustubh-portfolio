@@ -152,7 +152,7 @@ answers and says so. To get the live agent, fill in `DEEPSEEK_API_KEY`,
 | `npm test` | Vitest unit + eval suites | $0.00 |
 | `npm run test:e2e` | Playwright, 3 viewports, `/api/chat` mocked | $0.00 |
 | `npm run bench` | the fast retrieval benchmark — reference config vs the production config, side by side | $0.00 |
-| `npm run eval:retrieval` | the authoritative retrieval benchmark against the live index | $0.00 |
+| `npm run eval:retrieval` | the authoritative retrieval benchmark against the live index. Exits non-zero below the gate (85% recall@5 / 75% MRR@10), so it fails loudly while the gate is red. | $0.00 |
 | `npm run eval` | promptfoo over the golden set (150 cases) | **model calls** |
 | `npm run index` | rebuild the code index from the local clones | $0.00 |
 
@@ -232,6 +232,12 @@ This is the part worth reading. Every item below is true today.
 3. **The rate limiter is in-process and per-instance.** It is a map in the
    memory of one serverless instance, so it slows down one noisy client; it
    does not enforce a global quota across instances.
+   *Measured:* on Vercel the limit **cannot** be bypassed by rotating
+   `x-forwarded-for` — the edge prepends the real client IP, and the limiter
+   reads the leftmost entry. Twelve requests with one header gave
+   `200 × 10, 429, 429`, and a request with a *different* header was still
+   `429`. It is bypassable only where no proxy rewrites the header, i.e.
+   locally.
 4. **The spend ceiling is per-instance per day.** Two instances can each
    spend the ceiling. A real deployment needs a shared counter.
 5. **`/mcp` needs `MCP_AUTH_TOKEN` set or it is open.** The endpoint serves
@@ -239,11 +245,20 @@ This is the part worth reading. Every item below is true today.
    error on every request while the token is unset, but a log line is not a
    control.
 6. **The answer benchmark is below its gate.** The full 150-question answer
-   run scored **53.3%** against an 85% gate (the 20-question slice scored
-   65.0%). The benchmark now exits non-zero below the gate, so the gate is
-   real, and it is currently red. The retrieval work is the dependency, not
-   an excuse.
-7. **One diagnostic in the repo still lies.** `scripts/eval/diagnose-retrieval.ts`
+   run scored **53.3%** against an 85% gate. Measured again on 2026-10-22
+   with the new retriever, the 20-question slice scored **65.0%**
+   (claim-correction 9/12, code-explanation 4/8, confidence consistent on
+   20/20, no forbidden claim in 20/20). The benchmark exits non-zero below
+   the gate, so the gate is real, and it is currently red.
+   The failures are specific: **all four** evidence failures were *"right
+   file, wrong chunk"* — the retriever found the right file and the wrong
+   part of it — and three were the model choosing a `code` visual where a
+   `claims` visual was expected. Neither is a hallucination.
+7. **The model sometimes narrates.** The system prompt says *"do not narrate
+   your process"*, and the model sometimes opens with *"I'll pull the
+   architecture and the project record"* before answering. It is cosmetic,
+   it is visible to the visitor, and the prompt alone has not fixed it.
+8. **One diagnostic in the repo still lies.** `scripts/eval/diagnose-retrieval.ts`
    reports "not in the index at all" using strict containment while the
    benchmark uses overlap, so its count is far too high. The file says so at
    the top now; the corpus was never the problem.

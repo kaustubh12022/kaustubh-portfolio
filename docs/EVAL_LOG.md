@@ -57,7 +57,15 @@ These are the ones that should be run all the time.
 | 2026-10-22 | `npx tsx scripts/eval/bench.ts` — the Phase C tuning sweeps | every retrieval change measured one at a time: excluding test files (+9.5pp file-level recall@5), weighting the keyword leg 4x (+3.2pp chunk recall@5), and adding the local cross-encoder reranker (+13.2pp file-level recall@5). Two levers were measured and REJECTED: dropping high-document-frequency query tokens (−4.4pp) and IDF-weighting the substring leg (neutral). Evidence: `docs/RETRIEVAL.md` §3. | $0.00 |
 | 2026-10-22 | `npx tsx scripts/eval/retrieval-eval.ts` — the authoritative re-measurement | recall@5 **51.3%**, recall@10 61.4%, MRR@10 **40.0%**, nDCG@10 59.0%, hit@10 72.2%, precision@10 13.2%, **file-level recall@5 77.8%**, file-level recall@10 84.2%. The `NO TESTS` diagnostics now match the baseline exactly, which is the proof that the test-file filter is live in the default configuration. | $0.00 |
 | 2026-10-22 | `npm test` | 238 unit + eval tests pass (14 files) | $0.00 |
-| 2026-10-22 | `node scripts/verify-deployment.mjs` | the deployment smoke test: 12 of 13 checks green against the live site. The one failure was the reranker layer, which the previous deployment did not have. Evidence: the script's own output. | $0.00 |
+| 2026-10-22 | `node scripts/verify-deployment.mjs` | the deployment smoke test: 12 of 13 checks green against the live site. The one failure was the reranker layer, which the previous deployment did not have. Evidence: the script's own output. |
+| 2026-10-22 | `node scripts/verify-deployment.mjs` — **after the redeploy** | **13 of 13 checks green** against the live deployment: the home page, all four retrieval layers (embedding, database, search, **reranker**), a streamed chat answer, `/mcp` refusing an unauthenticated request with 401, both project pages, and the three crawler files. | $0.00 |
+| 2026-10-22 | answer benchmark, 20 question slice, **against the live deployment** | 55% overall, but **2 of the 20 questions were rate limited** (HTTP 429) and had no answer at all. The harness counted them as failures, which made it measure the rate limiter instead of the assistant. Fixed: a 429 is now reported as **skipped**, not failed, and the measured pass rate excludes it. Evidence: this run's `httpStatus` distribution, 18 × 200 and 2 × 429. | $0.018703 |
+| 2026-10-22 | answer benchmark, 20 question slice, **against the local dev server** | **pass rate 65.0%** (13/20), **0 skipped**, $0.019546 ($0.000977/question). claim_correction **9/12 = 75%** (was 58.3% before Phase C), code_explanation 4/8 = 50%. Confidence: 15 high, 5 medium, 0 low. The four evidence failures were **all** "right file, wrong chunk" — zero wrong files. | $0.019546 |
+| 2026-10-22 | the LangChain side-lab (`labs/langchain`) | the same retrieval task, the same weights, the same SQL, the same tuning and the same 79 questions, ported to Python: chunk recall@5 35.4% vs the shipped 51.3%, 5,815 ms per query vs ~2,700 ms. The cross-encoder was ruled out as the cause — the two ONNX runtimes produce byte-identical logits. Evidence: `docs/LANGCHAIN_COMPARISON.md`. | $0.00 |
+
+**Total LLM spend on 2026-10-22: $0.038249.** Total across the whole
+remediation, including the earlier day: **$0.21668** against the plan's
+**$0.50** budget. $0.28 remains.
 
 The stub is a ~50 line HTTP server that answers `POST /api/chat` with the
 same `data: {json}` frames the real route emits. It lives OUTSIDE the repo,
@@ -87,10 +95,27 @@ GOLDEN_MIN_PASS_RATE=0.5 npx tsx scripts/eval/golden-eval.ts
 An unreadable or out-of-range value falls back to the published gate instead
 of silently disabling the check.
 
-**The gate is currently RED.** The measured rate is 53.3% on the full run
-and 65.0% on the 20 question slice, against a gate of 85%. The manual
-`golden-eval` workflow is therefore expected to fail until the retrieval
-work lands. That is the gate doing its job, not a broken pipeline.
+**The gate is currently RED.** The measured rate is 65.0% on the 20 question
+slice (measured against the local dev server, with the Phase C retrieval in
+place), against a gate of 85%. The manual `golden-eval` workflow is
+therefore expected to fail until the answer quality catches up with the
+retrieval quality. That is the gate doing its job, not a broken pipeline.
+
+**What the remaining failures actually are.** From the 2026-10-22 slice:
+
+| check | failed / total | what it means |
+|---|---|---|
+| `evidence` | 4 / 8 | **every one of them "right file, wrong chunk"** — the retriever found the right file and the wrong part of it. Zero "wrong file". |
+| `visualKind` | 3 / 12 | the model chose a `code` visual where the golden set expects a `claims` visual |
+| `claim:smartapply-weasyprint` | 1 / 2 | the approved public wording was not reproduced verbatim |
+| `claim:c54-socketio` | 1 / 1 | the approved public wording was not reproduced verbatim |
+| `confidence` | 0 / 20 | every answer's confidence was internally consistent |
+| `answerNotContains` | 0 / 20 | no forbidden claim leaked into an answer |
+
+So the two remaining problems are **the chunk-level recall gap** (51.3% against
+the file-level 77.8%) and **the model picking the wrong visual kind for a
+claim-correction question**. Both are named, both are measurable, and neither
+is a hallucination problem.
 
 ---
 
@@ -208,10 +233,18 @@ any NEW serious or critical violation still fails the suite.
   Phase E changes.** The promptfoo and golden-eval configuration was
   validated against a local stub. The first real run after this change is
   the next row in this table.
-- **The answer benchmark has not been re-run since the Phase C retrieval work
-  landed.** The 53.3% figure is from 2026-10-21 12:52 UTC and was measured
-  against the OLD retriever. The retrieval numbers in the summary table ARE
-  current: they were re-measured on 2026-10-22 with the shipped tuning.
+- **The answer benchmark has not been re-run on the FULL 150 questions since
+  the Phase C retrieval work landed.** The 53.3% figure is from
+  2026-10-21 12:52 UTC against the OLD retriever. The 65.0% figure is the
+  2026-10-22 20-question slice against the NEW retriever. The retrieval
+  numbers in the summary table ARE current.
 - **The E2E suite does not measure the model.** It mocks `/api/chat` on
   purpose, so it costs nothing and is deterministic. The model is measured
   by the answer benchmark, and only there.
+- **The answer benchmark has to run against a LOCAL server to get a clean
+  number.** The live deployment limits a client to 10 requests per 5 minutes,
+  keyed on the real client IP, so a burst of 20 questions hits the limit.
+  The harness sends a synthetic `x-forwarded-for` per request, which works
+  locally (no proxy in the path) and does not work against Vercel (the edge
+  prepends the real IP). A rate-limited question is reported as **skipped**,
+  not as a failure, so the number measures the assistant and not the limiter.

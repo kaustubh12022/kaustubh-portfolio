@@ -28,13 +28,19 @@ import { expect, test } from "@playwright/test";
  * run, so it cannot be forgotten, and any NEW serious or critical violation
  * still fails the test.
  */
-const KNOWN_VIOLATIONS: Record<string, string> = {
-  "label-content-name-mismatch":
-    "components/chat/PortfolioChat.tsx:290-302 - the hero home button has " +
-    "aria-label=\"Kaustubh Kale - home\" while its visible text is " +
-    "\"KK Kaustubh Kale\", so the visible text is not part of the accessible " +
-    "name. Owned by the accessibility phase.",
-};
+/**
+ * Violations that are known and accepted.
+ *
+ * EMPTY ON PURPOSE. The `label-content-name-mismatch` violation on the hero
+ * home button - `aria-label="Kaustubh Kale - home"` next to the visible text
+ * "KK Kaustubh Kale" - was fixed: the accessible name now contains the
+ * visible label, which is what the rule asks for.
+ *
+ * The map is kept so that a NEW violation of a rule that was once known here
+ * has to be acknowledged deliberately instead of slipping in. Anything in
+ * this map is printed on every run.
+ */
+const KNOWN_VIOLATIONS: Record<string, string> = {};
 
 /** A violation, reduced to what a report needs. */
 type Blocking = {

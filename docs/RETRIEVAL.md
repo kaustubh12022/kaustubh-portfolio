@@ -208,8 +208,16 @@ already exists. It was deferred so the pipeline could ship first.
 behind `prf: false`. The idea is the classic one: take the identifiers of the
 best candidates and search for them again, which finds the neighbouring
 functions of the right file. It was written but the sweep was interrupted, so
-the default is off and no number is claimed for it. Measuring it is one
-`bench.ts` run.
+the default is off and no number is claimed for it.
+
+**The LangChain side-lab predicts that it will not help.** The lab's `prf`
+mode — pseudo-relevance feedback inside the retriever — produced
+**byte-identical metrics** to the plain mode (35.4% chunk recall@5 either
+way) at 19% more latency. LangChain's `MultiQueryRetriever` was identical
+again, at 47% more latency. The expansion terms are already covered by the
+existing legs. One `bench.ts` run against the TypeScript pipeline would
+confirm it; until then `prf` stays off and no claim is made for it. See
+`docs/LANGCHAIN_COMPARISON.md`.
 
 **The `symbols` and `edges` tables are empty.** The schema declares them and
 the code queries them, but nothing ever inserts into them. `find_symbol`

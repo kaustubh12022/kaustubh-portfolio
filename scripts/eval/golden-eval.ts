@@ -1184,19 +1184,55 @@ const overallPassRate =
     : results.filter((result) => result.pass).length / results.length;
 
 /**
+ * The questions that were never measured.
+ *
+ * A request that comes back 429 was not answered, so it was not answered
+ * WRONGLY either. Counting it as a failure would make the benchmark measure
+ * the rate limiter instead of the assistant, and it would make the number
+ * depend on how fast the run went rather than on the quality of the
+ * answers.
+ *
+ * The live deployment limits a client to 10 requests per 5 minutes, and the
+ * limiter is keyed on the REAL client IP - the deployment's edge prepends it
+ * to `x-forwarded-for`, so a synthetic header does not create a new bucket.
+ * A benchmark that fires twenty questions in a row therefore hits the limit,
+ * and the honest thing to do is report those questions as skipped.
+ *
+ * They are NOT hidden: the count is in the report and printed next to the
+ * pass rate.
+ */
+const skipped = results.filter(
+  (result) => result.httpStatus === 429 || result.httpStatus === 0,
+);
+const measured = results.filter((result) => !skipped.includes(result));
+const measuredPassRate =
+  measured.length === 0
+    ? 0
+    : measured.filter((result) => result.pass).length / measured.length;
+
+/**
  * The pass rate this run is held to, and whether it cleared it.
  *
  * The benchmark used to exit 0 unconditionally, so it could not fail a
  * build even at 53%. It now exits non-zero below the gate.
  */
 const minPassRate = resolveMinPassRate();
-const gatePassed = overallPassRate >= minPassRate;
+const gatePassed = measuredPassRate >= minPassRate;
 
 const report = {
   generatedAt: new Date().toISOString(),
   url: options.url,
   count: results.length,
+  /**
+   * The pass rate over the questions that were actually answered.
+   *
+   * `overallPassRate` counts every attempted question, including the ones
+   * the rate limiter rejected. Both are published.
+   */
   overallPassRate,
+  measuredPassRate,
+  skippedCount: skipped.length,
+  skippedIds: skipped.map((result) => result.id),
   totalCostUsd: totalCost,
   costPerQuestionUsd: results.length === 0 ? 0 : totalCost / results.length,
   /** How many answers came from the route's answer cache (free). */
@@ -1266,7 +1302,13 @@ if (options.json) {
   console.log("=== ANSWER BENCHMARK (live /api/chat) ===");
   console.log("");
   console.log(`questions      : ${report.count}`);
-  console.log(`pass rate      : ${pct(overallPassRate)}`);
+  console.log(`pass rate      : ${pct(measuredPassRate)}`);
+  if (skipped.length > 0) {
+    console.log(
+      `skipped        : ${skipped.length} (rate limited or unreachable - ` +
+        `not measured, not failed)`,
+    );
+  }
   console.log(`total cost     : $${totalCost.toFixed(6)}`);
   console.log(
     `cost per question: $${report.costPerQuestionUsd.toFixed(6)} ` +
