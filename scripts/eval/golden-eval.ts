@@ -67,6 +67,16 @@ interface CliOptions {
   concurrency: number;
   /** Where to write the JSON report. */
   out: string | null;
+  /**
+   * The hard spend ceiling for this run, in USD.
+   *
+   * The benchmark calls a real LLM, so a bug in the harness (a retry loop,
+   * a bucket that selects everything) can burn real money. This cap makes
+   * the run stop instead. The default is deliberately small: the point of
+   * a test run is to find out whether the change helped, not to spend the
+   * balance.
+   */
+  maxSpendUsd: number;
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -79,6 +89,7 @@ function parseArgs(argv: string[]): CliOptions {
     url: "http://localhost:3000/api/chat",
     concurrency: 3,
     out: null,
+    maxSpendUsd: 0.50,
   };
   for (const arg of argv) {
     if (arg.startsWith("--questions=")) {
@@ -108,6 +119,8 @@ function parseArgs(argv: string[]): CliOptions {
       options.concurrency = Number(arg.slice("--concurrency=".length));
     } else if (arg.startsWith("--out=")) {
       options.out = arg.slice("--out=".length);
+    } else if (arg.startsWith("--max-spend=")) {
+      options.maxSpendUsd = Number(arg.slice("--max-spend=".length));
     } else if (arg === "--json") {
       options.json = true;
     }
@@ -364,6 +377,19 @@ async function getPool() {
   if (!url) return null;
   pool = createPgPool(url, { max: 2 }) as never;
   return pool;
+}
+
+/**
+ * Close the evaluation pool.
+ *
+ * The pool is assigned inside `getPool`, so TypeScript narrows the outer
+ * binding to `null` at the top level and a direct `pool.end()` call does not
+ * type-check. Reading it through a function keeps the narrowing local.
+ */
+async function closeEvalPool(): Promise<void> {
+  const current = pool;
+  if (!current) return;
+  await current.end().catch(() => undefined);
 }
 
 /** Read the cost row the route wrote for this question. */
@@ -671,6 +697,26 @@ if (!options.json) {
 
 const results: Result[] = [];
 
+/**
+ * The running spend of this benchmark.
+ *
+ * The benchmark calls a real LLM, so a bug in the harness can burn real
+ * money. This is the guard: as soon as the spend crosses the ceiling, no
+ * further questions are started. The questions already in flight are
+ * allowed to finish so their results are not wasted.
+ */
+let spendUsd = 0;
+
+/** True once the ceiling is reached. */
+let budgetExhausted = false;
+
+function recordSpend(costUsd: number): void {
+  spendUsd += costUsd;
+  if (spendUsd >= options.maxSpendUsd) {
+    budgetExhausted = true;
+  }
+}
+
 async function runOne(
   question: GoldenQuestion,
   index: number,
@@ -679,6 +725,7 @@ async function runOne(
   const cost = await readCost(question.question);
   const result = evaluate(question, response, cost);
   results.push(result);
+  recordSpend(cost?.cost_usd ?? 0);
   if (!options.json) {
     const costText = cost
       ? `$${cost.cost_usd.toFixed(6)}`
@@ -686,7 +733,7 @@ async function runOne(
     console.log(
       `  ${result.pass ? "PASS" : "FAIL"} ${result.id} [${result.bucket}] ` +
         `${response.latencyMs}ms ${costText} vis=${result.visual?.visual?.kind ?? "-"} ` +
-        `conf=${result.confidence}`,
+        `conf=${result.confidence} spend=$${spendUsd.toFixed(4)}/${options.maxSpendUsd}`,
     );
     if (!result.pass) {
       for (const check of result.checks) {
@@ -702,6 +749,14 @@ let counter = 0;
 
 async function worker(): Promise<void> {
   for (;;) {
+    if (budgetExhausted) {
+      if (!options.json) {
+        console.log(
+          `\n  [budget] spend ceiling of $${options.maxSpendUsd.toFixed(2)} reached - stopping the run.`,
+        );
+      }
+      return;
+    }
     const index = cursor;
     cursor += 1;
     if (index >= selected.length) return;
@@ -716,7 +771,7 @@ await Promise.all(
   Array.from({ length: Math.min(CONCURRENCY, selected.length) }, () => worker()),
 );
 
-if (pool) await pool.end().catch(() => undefined);
+await closeEvalPool();
 
 /* ------------------------------------------------------------------ */
 /* Report                                                              */

@@ -104,14 +104,32 @@ function loadArchitecture(id: string): Architecture | null {
   }
 }
 
+/**
+ * Words that must never end a cut sentence: a description that ends on
+ * "scores the…" reads like a bug.
+ */
+const DANGLING_WORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "been", "before", "but", "by",
+  "can", "could", "did", "do", "does", "for", "from", "had", "has", "have",
+  "her", "his", "if", "in", "into", "is", "it", "its", "may", "might", "my",
+  "of", "on", "or", "over", "our", "so", "than", "that", "the", "their",
+  "then", "to", "was", "were", "when", "which", "while", "will", "with",
+  "would", "your",
+]);
+
 function truncate(text: string, max: number): string {
   const clean = text.replace(/\s+/g, " ").trim();
   if (clean.length <= max) return clean;
 
   const slice = clean.slice(0, max);
   const lastSpace = slice.lastIndexOf(" ");
-  const head = lastSpace > 0 ? slice.slice(0, lastSpace) : slice;
-  return `${head.trimEnd()}…`;
+  const words = (lastSpace > 0 ? slice.slice(0, lastSpace) : slice).split(" ");
+
+  const last = words[words.length - 1]?.toLowerCase() ?? "";
+  if (DANGLING_WORDS.has(last)) words.pop();
+
+  const head = words.join(" ").replace(/[.,;:,\s]+$/, "");
+  return `${head}…`;
 }
 
 /**
@@ -120,7 +138,9 @@ function truncate(text: string, max: number): string {
  */
 function buildDescription(project: Project): string {
   const lead = `${project.name} — ${project.tagline}.`;
-  return `${lead} ${truncate(project.summary, 158 - lead.length - 1)}`;
+  const budget = 165 - lead.length - 1;
+
+  return `${lead} ${truncate(project.summary, budget)}`;
 }
 
 export async function generateStaticParams() {
@@ -154,11 +174,25 @@ export async function generateMetadata({
       description,
       url,
       siteName: "Kaustubh Kale",
+      /**
+       * A page-level `openGraph` object replaces the inherited one, so the
+       * file-based Open Graph image has to be named again here. `/opengraph-image`
+       * is the generated card in `app/opengraph-image.tsx`.
+       */
+      images: [
+        {
+          url: "/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: `${project.name} — ${project.tagline}`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: ["/opengraph-image"],
     },
     other: project.repo
       ? { "project:repository": project.repo }
@@ -445,10 +479,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         {/* ---------------------------------------------------------- */}
         {project.caveats.length ? (
           <section className="mt-4 rounded-[22px] border border-warn/25 bg-warn/5 p-5 sm:mt-6 sm:p-6">
-            <div className="flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.16em] text-warn">
+            <h2 className="flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.16em] text-warn">
               <AlertTriangle className="h-3.5 w-3.5" />
               Caveats
-            </div>
+            </h2>
             <p className="mt-2.5 max-w-[62ch] text-[12.5px] leading-[1.6] text-muted">
               What this project does not do. These are stated here rather than
               buried, because a portfolio that only lists strengths is not
@@ -473,9 +507,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         {/* ---------------------------------------------------------- */}
         <section className="mt-4 overflow-hidden rounded-[22px] border border-accent/25 bg-accent-soft/50 sm:mt-6">
           <div className="px-5 py-6 sm:px-6">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.16em] text-accent">
+            <h2 className="text-[10.5px] font-medium uppercase tracking-[0.16em] text-accent">
               Ask about this project
-            </div>
+            </h2>
             <p className="mt-2.5 max-w-[54ch] text-[13.5px] leading-[1.62] text-ink-soft">
               The assistant answers from the same content layer this page is
               built from, and shows the source lines behind every answer.

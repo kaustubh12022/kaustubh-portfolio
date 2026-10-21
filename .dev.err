@@ -1,0 +1,527 @@
+(node:17536) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[ai] dropped citations: [{"projectId":"smartapply","path":"src/scorer.py","startLine":333,"endLine":412,"hasQuote":true}]
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+⨯ ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  [90m385 |[0m [90m * is applied in `execute` instead.[0m
+  [90m386 |[0m [90m */[0m
+[31m[1m>[0m [90m387 |[0m [36mexport[0m [36mconst[0m [33mMAX_SEARCH_LIMIT[0m = [35m6[0m;
+  [90m    |[0m              [31m[1m^^^^^^^^^^^^^^^^[0m
+  [90m388 |[0m
+  [90m389 |[0m [36mfunction[0m clip(text: string): { text: string; truncated: boolean } {
+  [90m390 |[0m   [36mif[0m (text.length <= [33mMAX_CHUNK_CHARS[0m) [36mreturn[0m { text, truncated: [36mfalse[0m };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts
+
+
+⨯ ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  [90m385 |[0m [90m * is applied in `execute` instead.[0m
+  [90m386 |[0m [90m */[0m
+[31m[1m>[0m [90m387 |[0m [36mexport[0m [36mconst[0m [33mMAX_SEARCH_LIMIT[0m = [35m6[0m;
+  [90m    |[0m              [31m[1m^^^^^^^^^^^^^^^^[0m
+  [90m388 |[0m
+  [90m389 |[0m [36mfunction[0m clip(text: string): { text: string; truncated: boolean } {
+  [90m390 |[0m   [36mif[0m (text.length <= [33mMAX_CHUNK_CHARS[0m) [36mreturn[0m { text, truncated: [36mfalse[0m };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts
+
+
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 
+[browser] ./lib/ai/tools.ts:387:14
+Error: the name `MAX_SEARCH_LIMIT` is defined multiple times
+  385 |  * is applied in `execute` instead.
+  386 |  */
+> 387 | export const MAX_SEARCH_LIMIT = 6;
+      |              ^^^^^^^^^^^^^^^^
+  388 |
+  389 | function clip(text: string): { text: string; truncated: boolean } {
+  390 |   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/ai/tools.ts
+    ./app/api/chat/route.ts 

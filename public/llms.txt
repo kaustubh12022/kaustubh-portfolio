@@ -1,0 +1,518 @@
+# Kaustubh Kale
+
+> Graduate Engineer (B.E. Information Technology, 2026, SKNSITS Lonavala, SPPU). I build AI automation pipelines, agentic tools, and backend systems, and I publish the evidence for every claim.
+
+This file is the machine-readable version of the portfolio. It is generated from the same audited content layer that renders the site: `content/profile.yaml`, `content/projects/*.yaml`, `content/metrics.yaml` and `content/claims.yaml`. Nothing here is written by hand or invented.
+
+## Who
+
+- **Name:** Kaustubh Kale
+- **Headline:** Graduate Engineer
+- **Location:** Pune, Maharashtra, India
+- **Email:** kaustubh.kale.work@gmail.com
+- **Phone:** +91-9975526627
+- **GitHub:** https://github.com/kaustubh12022
+- **LinkedIn:** https://linkedin.com/in/kaustubhkale12
+- **Availability:** Open to full-time roles — AI / GenAI Engineer, AI Agents / Automation, Backend Developer, Full Stack Developer, Java Developer
+- **Open to locations:** Pune, Mumbai, Bangalore, Remote, Open to relocation
+- **Summary:** Graduate Engineer (B.E. Information Technology, 2026) who builds AI automation, agentic tools, and backend systems. I have shipped a job-automation pipeline with DeepSeek scoring and ATS resume generation, a production booking platform, a realtime settlement PWA, and a Gemini Live voice agent. I care about grounded AI, measured results, and code that survives review.
+
+### Education
+
+- **B.E. Information Technology** — SKNSITS, Lonavala (Savitribai Phule Pune University), Pune, India (2022 - 2026), CGPA 7.51 / 10.0
+- **HSC (Science)** — S.D.H.G.P. Sec & Higher Secondary School, Mukindpur (2020 - 2022), 82.33%
+- **SSC** — S.D.H.G.P. Sec & Higher Secondary School, Mukindpur (2019 - 2020), 88.00%
+
+### Experience
+
+- **Java Developer Intern, CWIPedia Technologies** — Jan 2025 - Feb 2025, Pune, India. Evidence status: resume-only.
+  - Built modular backend features with Java, SQL, JDBC, and REST APIs.
+  - Worked on query and payload optimization using data structures and algorithms.
+  - Built responsive UI with HTML5, CSS3, and JavaScript.
+  - Worked in two-week Agile/Scrum sprints.
+  - Note: No code, offer letter, or project artifact was available in the audited folders. The internship is listed as experience, but its resume metrics are not presented as verified portfolio evidence.
+
+### Skills
+
+- **ai:** Python, AsyncIO, DeepSeek API, Prompt engineering, JSON schema validation, Regex filtering, Jinja2, Playwright, Pandas, Gemini API, Gemini Live API, Supabase, Deno edge functions, Flutter / Dart
+- **backend:** Node.js, Express, MongoDB / Mongoose, JWT, SQLite, REST APIs, WebSockets, Flask
+- **frontend:** React, JavaScript, Tailwind CSS, Vite, HTML5, CSS3, PWA
+- **tools:** Git / GitHub, Postman, VS Code, IntelliJ IDEA, Maven, Vercel, Render
+- **Internship:** Java, SQL, JDBC, REST APIs
+- **Coursework:** Spring Core, Hibernate / JPA, MySQL, Docker, Kubernetes, Data Structures & Algorithms, OOP, DBMS
+- **Currently building:** RAG with pgvector, MCP tool servers, Agentic retrieval, Next.js 16, AI SDK 7, TypeScript
+
+## How to read this file
+
+- Every project below has a static page that carries the same facts, plus the full metric table with its method and source, and the caveats.
+- A number appears here only when `content/metrics.yaml` records how it was measured, where it came from, and when it was verified.
+- The claim ledger at the end lists resume claims the code does not support, with the wording that IS approved. Prefer the approved wording verbatim.
+
+## Projects
+
+### SmartApply
+
+- **Page:** /projects/smartapply
+- **Tagline:** AI-driven job automation pipeline
+- **Status:** prototype
+- **Role:** Solo build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/JobHunt-Automation
+- **Live:** not deployed
+- **Stack:** Python, AsyncIO, DeepSeek, Flask, React, SQLite, Supabase, Playwright
+- **Summary:** A six-stage pipeline that scrapes entry-level job postings, filters them with regex heuristics, scores the survivors with DeepSeek, tailors an ATS-oriented resume for each shortlisted job, renders PDFs, and tracks applications in a React dashboard.
+
+**Highlights**
+
+- Regex prefilter cuts LLM scoring calls before they are spent.
+- DeepSeek JSON scoring with schema validation and a job-description cache.
+- ATS resume generation with locked facts and Playwright PDF rendering.
+- Flask + SSE API with a React operations dashboard.
+
+**Features**
+
+- **Cost-aware LLM scoring** — A regex/pandas filter removes out-of-scope roles before the model sees them. The first scoring call runs serially to warm the provider cache, then the rest fan out with asyncio.gather. Identical job descriptions hit jd_cache. (evidence: `src/scorer.py:549-559; src/ai_engine.py:38-56`)
+- **Structured scoring** — DeepSeek returns JSON that is validated before it touches the database. Scores, missing skills, and fit labels are persisted per job. (evidence: `src/scorer.py; src/ai_engine.py`)
+- **ATS resume tailoring** — Personal details, education, employers, and dates are locked. The tailor prunes non-inventory skills, selects three projects, and enforces 3+2+2 bullets before rendering. (evidence: `src/resume_tailor.py`)
+- **PDF rendering and verification** — Jinja2 HTML is rendered to A4 with Playwright Chromium, then checked for ATS issues with pypdf/PyMuPDF. WeasyPrint is not used. (evidence: `src/pdf_generator.py; ats_verifier.py`)
+- **Operations dashboard** — A React dashboard exposes scanning, job cards, a tracker, and a Kanban view. The Flask API streams progress over SSE. (evidence: `frontend/src; app.py`)
+
+**Verified metrics**
+
+- **Raw postings in the recorded batch:** 3,360 — method: Single recorded batch; not a daily rate. — source: `JobHunt-Automation/full_matrix_results.json` — verified 2026-10-05
+- **Postings dropped by the pandas/regex filter:** 2,328 — method: Recorded batch; filter stage. — source: `JobHunt-Automation/full_matrix_results.json` — verified 2026-10-05
+- **Postings scored by DeepSeek:** 1,032 — method: Recorded batch; 69.3% fewer scoring calls than the raw set. — source: `JobHunt-Automation/full_matrix_results.json` — verified 2026-10-05
+- **Shortlisted from the 14 Oct batch:** 17 — method: 39 URLs -> 35 parsed -> 17 shortlisted; separate from the 3,360 batch. — source: `JobHunt-Automation/batch_summary_report.json` — verified 2026-10-14
+- **Code lines (excluding vendor):** 39,699 — method: Python/JS/JSX/TS/TSX/SQL/HTML/CSS, repository audit. — source: `JobHunt-Automation` — verified 2026-10-19
+- **Test functions:** 455 — method: Static count of pytest/vitest test declarations. — source: `JobHunt-Automation/tests; frontend/src/**/*.test.*` — verified 2026-10-19
+- **Git commits:** 18 — method: git log on the audited snapshot. — source: `JobHunt-Automation` — verified 2026-10-19
+
+**Caveats**
+
+- The Flask API has no authentication; it is not exposed publicly.
+- Supabase RLS is disabled in the audited schema.
+- 2,000+/day and >80% cost reduction are not measured as stated.
+- The repo is a working prototype, not a hosted product.
+
+### Pawna Camping
+
+- **Page:** /projects/pawna
+- **Tagline:** Multi-property booking and operations platform
+- **Status:** live
+- **Role:** Full-stack build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/Pawna-camping
+- **Live:** https://pawna-camping.vercel.app
+- **Stack:** React, Vite, Tailwind CSS, Node.js, Express, MongoDB, Mongoose, JWT, Cloudinary, PWA
+- **Summary:** A booking and operations platform for Pawna lake camping. Visitors check availability, configure guests and packages, and book. Owners and managers get role-scoped dashboards for properties, bookings, blocked dates, and revenue.
+
+**Highlights**
+
+- Weekday/weekend pricing with per-person and whole-villa logic.
+- Blocked-date and capacity overlap checks before a booking.
+- Owner-scoped JWT access to properties, bookings, and analytics.
+- Cloudinary media uploads and a PWA shell.
+
+**Features**
+
+- **Availability and pricing** — The booking controller checks blocked dates, guest capacity, and weekday/weekend rules, then computes the total from the selected package and guest count. (evidence: `backend/controllers/bookingController.js`)
+- **Role-scoped operations** — JWT middleware scopes owners and managers to their properties. Dashboards expose bookings, revenue, and commission views. (evidence: `backend/middleware/auth.js; backend/routes`)
+- **Property and media management** — Owners create properties, upload images through Cloudinary, and manage packages and blocked dates. (evidence: `backend/models/Property.js; backend/routes/properties.js`)
+- **PWA experience** — The React frontend ships a manifest, installable shell, and responsive booking flow; the API is deployed separately on Render. (evidence: `frontend/public/manifest.json; vercel.json; render.yaml`)
+
+**Verified metrics**
+
+- **Code lines (excluding vendor):** 17,244 — method: JS/JSX/TS/TSX/SQL/HTML/CSS, repository audit. — source: `Pawna-camping` — verified 2026-10-19
+- **Git commits:** 20 — method: git log on the audited snapshot. — source: `Pawna-camping` — verified 2026-10-19
+- **Properties visible in the live audit:** 3 — method: Live API audit; one owner. Not a customer count. — source: `Pawna-camping live API` — verified 2026-10-19
+
+**Caveats**
+
+- Booking creation has no database transaction or lock; simultaneous requests can race.
+- User.plainPassword is stored and returned by an owner endpoint; remove it.
+- The public properties endpoint leaks owner email; shape the response.
+- It is one Express monolith, not microservices.
+- Web-push exists but the owner subscription flow is incomplete.
+
+### C54
+
+- **Page:** /projects/c54
+- **Tagline:** Card-score tracking and settlement engine
+- **Status:** live
+- **Role:** Solo build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/C54-Casino
+- **Live:** https://c54-casino.vercel.app
+- **Stack:** JavaScript, PWA, Supabase, PostgreSQL, Supabase Realtime
+- **Summary:** A host-authoritative card-score tracker for a 54-card group game. The host enters rounds, everyone sees a live scoreboard, and the app computes the minimum set of transfers that settles all debts.
+
+**Highlights**
+
+- Exact subset-DP settlement for up to 15 players, with a greedy fallback.
+- Integer-paise arithmetic to avoid floating-point drift.
+- Live scoreboard over Supabase Realtime.
+- 39 assertions covering the settlement engine.
+
+**Features**
+
+- **Settlement engine** — The engine computes each player's net balance, then finds the minimum number of transfers using exact subset DP for small groups and a greedy pass for larger ones. All amounts are integer paise. (evidence: `app.js; test_suite.js`)
+- **Live session** — The host writes the session JSON; guests subscribe to the Supabase Realtime channel and see the scoreboard update. The host is the source of truth. (evidence: `app.js; init_tables.js`)
+- **PWA shell** — Installable mobile-first UI with offline caching for the shell and a compact score-entry flow. (evidence: `manifest.json; service-worker.js`)
+
+**Verified metrics**
+
+- **Code lines:** 4,703 — method: JS/HTML/CSS, repository audit. — source: `C54-Casino` — verified 2026-10-19
+- **Test assertions:** 39 — method: Static count in test_suite.js. — source: `C54-Casino/test_suite.js` — verified 2026-10-19
+- **Git commits:** 23 — method: git log on the audited snapshot. — source: `C54-Casino` — verified 2026-10-19
+
+**Caveats**
+
+- Not a playable casino and not Socket.IO; it is a host-authoritative scoreboard.
+- Hardcoded Supabase credentials are present in the repo; rotate them now.
+- RLS policies allow anon reads/inserts/updates; tighten before sharing the live demo.
+- Guests are read-only; there is no concurrent per-player gameplay.
+
+### Aura
+
+- **Page:** /projects/aura
+- **Tagline:** Gemini Live voice agent for skincare support
+- **Status:** assessment
+- **Role:** Hiring assessment build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/aura-skincare-voice-cx
+- **Live:** https://aura-skincare-voice-cx.onrender.com
+- **Stack:** React, Vite, Express, WebSocket, Gemini Live, Vitest, Playwright
+- **Summary:** A real-time voice customer-support agent for a skincare brand. The browser streams 16 kHz PCM audio over a WebSocket to a relay that talks to Gemini Live; the model responds with 24 kHz audio, can call order tools, and is interrupted cleanly when the caller speaks.
+
+**Highlights**
+
+- Speech-to-speech with Gemini Live.
+- Barge-in and scheduled audio playback.
+- Tool calls for order lookup and cancellation.
+- Post-call summary with a deterministic fallback.
+- 129 test declarations across unit, integration, and E2E suites.
+
+**Features**
+
+- **Audio relay** — The relay forwards 16 kHz PCM input to Gemini Live and schedules 24 kHz PCM output chunks for playback. It handles interruption and reconnect paths. (evidence: `server/geminiLiveRelay.js:16-56; src/hooks/useVoiceAgent.js:52-63`)
+- **Tool calls** — Gemini can call get_order_details and cancel_order. The tool results are returned into the live session so the spoken answer stays grounded. (evidence: `server/tools.js; server/geminiLiveRelay.js`)
+- **Post-call summary** — After the call, the server produces a structured summary and falls back to a deterministic summary if the model call fails. (evidence: `server/summary.js`)
+- **Test coverage** — Unit, integration, and E2E suites cover the audio path, tool calls, and UI. The repo has 129 test declarations; there is no coverage report backing a 100% claim. (evidence: `tests/; playwright.config.js`)
+
+**Verified metrics**
+
+- **Code lines:** 7,615 — method: JS/JSX/TS/TSX, repository audit. — source: `aura-skincare-voice-cx` — verified 2026-10-19
+- **Test declarations:** 129 — method: Static count across unit/integration/E2E suites; no coverage report. — source: `aura-skincare-voice-cx/tests` — verified 2026-10-19
+
+**Caveats**
+
+- Built as a hiring assessment; published with permission and labelled as such.
+- No authentication on the live app; order and reset endpoints are public.
+- The 122 tests / 100% coverage claim is not supported by the repo.
+
+### Personal AI OS
+
+- **Page:** /projects/personal-ai-os
+- **Tagline:** Chat-driven personal productivity app
+- **Status:** prototype
+- **Role:** Solo build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/personal-ai-os
+- **Live:** not deployed
+- **Stack:** Flutter, Dart, Riverpod, Supabase, Deno, TypeScript, Gemini, Groq
+- **Summary:** A Flutter personal assistant that turns chat into actions: add tasks, log expenses, set budgets, and ask for summaries. A Deno edge function routes intents to Gemini with a Groq fallback, while a regex fast-path handles simple commands without spending tokens.
+
+**Highlights**
+
+- Chat actions for tasks, expenses, budgets, and recurring habits.
+- Zero-token regex fast-path for simple commands.
+- JSON-validated intent contract with server-side execution.
+- Inline charts and tables in the chat.
+- Supabase Realtime updates across screens.
+
+**Features**
+
+- **Intent routing** — The edge function first applies a regex fast-path for simple commands. If the request needs language understanding, it calls Gemini with a JSON intent contract and falls back to Groq if Gemini is unavailable. (evidence: `supabase/functions/chat/index.ts:92-614`)
+- **Chat-driven actions** — The returned intent and payload are validated, then executed against Postgres: create a task, log an expense, update a budget, or query a summary. (evidence: `supabase/functions/chat/index.ts`)
+- **Inline visual responses** — The Flutter chat renders markdown, charts, and tables so a spending or task answer is visual without leaving the conversation. (evidence: `lib/features/chat`)
+- **Realtime state** — Supabase channels keep tasks, expenses, and dashboards in sync while the app is open. (evidence: `lib/core/supabase`)
+
+**Verified metrics**
+
+- **Code lines:** 3,959 — method: Dart/TS/SQL, repository audit. — source: `personal-ai-os` — verified 2026-10-19
+- **Test declarations:** 23 — method: Static count of widget/unit tests. — source: `personal-ai-os/test` — verified 2026-10-19
+
+**Caveats**
+
+- The resume's Python/Ollama/LangChain/FastAPI/SQLite stack is wrong for this repo.
+- No voice pipeline; chat is text-only.
+- No provider tool calling; the edge function executes JSON intents.
+- No RLS and no auth in the audited schema; do not expose it as a public service.
+- The second_brain.embedding table is unused; this is not a working RAG system.
+
+### DayScore
+
+- **Page:** /projects/dayscore
+- **Tagline:** Offline-first daily tracking PWA
+- **Status:** live
+- **Role:** Solo build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/DayScore
+- **Live:** https://day-score-three.vercel.app
+- **Stack:** JavaScript, PWA, localStorage, Firebase
+- **Summary:** A small offline-first PWA for scoring the day across a few personal metrics, with streaks, history, and optional Firebase sync.
+
+**Highlights**
+
+- Works offline with localStorage.
+- Installable PWA shell.
+- Optional Firebase sync.
+- Compact mobile-first UI.
+
+**Features**
+
+- **Offline-first state** — Daily scores are stored locally and the app remains usable without a network. Firebase is optional for sync. (evidence: `app.js; firebase-config.js`)
+- **PWA shell** — Manifest and service worker make the app installable and cache the shell. (evidence: `manifest.json; sw.js`)
+
+**Verified metrics**
+
+- **Code lines:** 2,794 — method: JS/HTML/CSS, repository audit. — source: `DayScore` — verified 2026-10-19
+
+**Caveats**
+
+- Small project; no test suite.
+- Two commits; not a flagship engineering story.
+
+### Personal Application Copilot
+
+- **Page:** /projects/copilot
+- **Tagline:** Job-application answers from a curated knowledge base
+- **Status:** prototype
+- **Role:** Solo build
+- **Timeline:** 2026
+- **Repository:** https://github.com/kaustubh12022/personal-application-copilot
+- **Live:** not deployed
+- **Stack:** Next.js, React, TypeScript, Tailwind CSS, DeepSeek, Vercel
+- **Summary:** A small Next.js 14 App Router chat app that answers job-application questions from a hand-written Markdown knowledge base, calling the DeepSeek REST API directly. The system prompt and the knowledge file are concatenated once at module scope so the provider's prefix cache always sees the same bytes. It is 761 lines, one API route and two commits.
+
+**Highlights**
+
+- Byte-stable system prefix so the provider's automatic prefix cache hits.
+- 15-minute in-memory answer cache with an X-Cache: HIT or MISS header.
+- Strict 5-6 sentence budget plus an explicit "I haven't built that" rule.
+- Every model reply is normalised to plain ASCII before it reaches the UI.
+
+**Features**
+
+- **Stable prefix for provider caching** — The system prompt and the knowledge file are read once at module scope and concatenated into one system message, so every request sends identical prefix bytes and the provider's automatic prefix cache can serve it. (evidence: `app/api/chat/route.ts:42-54`)
+- **Answer cache** — Identical normalised questions are served from a 15-minute in-memory map that is FIFO-capped at 200 entries, and every response carries an X-Cache: HIT or MISS header. (evidence: `app/api/chat/route.ts:57-62,84-97,148-153`)
+- **Answer discipline** — The system prompt caps standard answers at 5-6 sentences, formats multiple-choice questions as [x] and [ ] lines in the original option order, and requires the model to say "I haven't built that" for anything not present in the knowledge base. (evidence: `app/api/chat/route.ts:5-40`)
+- **Curated knowledge base** — context/knowledge_graph.md is the whole corpus: 113 lines and 14 KB covering identity, skills, experience and each project. It is read from disk at cold start; nothing is retrieved, embedded or ranked. (evidence: `context/knowledge_graph.md; app/api/chat/route.ts:42-49`)
+
+**Verified metrics**
+
+- **Code lines (excluding package-lock):** 761 — method: Static line count of every git-tracked file except package-lock.json, .gitignore and .env.local.example. — source: `personal-application-copilot` — verified 2026-10-21
+- **Knowledge base length:** 113 — method: Static line count of context/knowledge_graph.md, the entire answer corpus. — source: `personal-application-copilot/context/knowledge_graph.md` — verified 2026-10-21
+- **API routes:** 1 — method: Count of route files under app/api that export an HTTP handler. — source: `personal-application-copilot/app/api` — verified 2026-10-21
+
+**Caveats**
+
+- The answer cache is in-memory and per serverless instance: a cold start starts empty and two instances do not share it.
+- The knowledge file is read with fs.readFileSync on process.cwd() and next.config.mjs has no outputFileTracingIncludes, so a serverless bundle can silently fall back to the one-line summary string.
+- The knowledge base is hand-written Markdown, not retrieved; there is no vector store, ranking or embedding step.
+- The README's 96%+ cache-hit and ~90% cost-saving figures are not measured anywhere in the repo.
+- Two commits, one API route and no test suite; this is a side project, not a flagship build.
+
+## Claim ledger
+
+Every claim the earlier resume made, the status the source-code audit gave it, and the wording that is approved for public use. If you summarise this portfolio, use the approved wording and keep the status.
+
+### Contradicted — never repeat these as facts
+
+#### SmartApply PDF rendering (`smartapply-weasyprint`)
+
+- **Old claim:** "Resume PDFs are rendered with WeasyPrint."
+- **Status:** contradicted
+- **Approved wording:** The pipeline renders ATS-oriented PDFs with Jinja2 + Playwright.
+- **Evidence:** The renderer uses Jinja2 HTML templates and Playwright Chromium, then validates with pypdf/PyMuPDF. WeasyPrint is not imported.
+- **Source:** `JobHunt-Automation/src/pdf_generator.py`
+
+#### CampFlow deployment (`campflow-microservices`)
+
+- **Old claim:** "RESTful API microservices on Vercel."
+- **Status:** contradicted
+- **Approved wording:** A React frontend on Vercel and an Express API on Render.
+- **Evidence:** One Vercel-hosted React SPA and one Express API (Render). No service split, queue, or independent deployables.
+- **Source:** `Pawna-camping/package.json; backend/server.js; vercel.json`
+
+#### Personal AI OS stack (`personal-ai-os-stack`)
+
+- **Old claim:** "Python, Ollama, LangChain, FastAPI, SQLite."
+- **Status:** contradicted
+- **Approved wording:** "A Flutter + Supabase assistant with a Deno edge function, Gemini, and a Groq fallback."
+- **Evidence:** The repo is Flutter/Dart + Riverpod + Supabase Postgres/Realtime + a 614-line Deno/TypeScript edge function calling Gemini, with Groq fallback. There is no Python, Ollama, LangChain, FastAPI, or SQLite code.
+- **Source:** `personal-ai-os/pubspec.yaml; supabase/functions/chat/index.ts`
+
+#### Personal AI OS voice and tools (`personal-ai-os-voice`)
+
+- **Old claim:** "Low-latency voice streaming and custom tool-calling agents."
+- **Status:** contradicted
+- **Approved wording:** "Chat-driven actions with a zero-token regex fast-path and JSON-validated intents. Voice is not implemented."
+- **Evidence:** No audio pipeline exists. The edge function uses a regex fast-path and a JSON intent contract executed server-side; it is not provider tool calling.
+- **Source:** `personal-ai-os/lib/features/chat; supabase/functions/chat/index.ts`
+
+#### MedFlow (`medflow`)
+
+- **Old claim:** "Spring Boot, MySQL, JPA/Hibernate, JWT, HIPAA, 40% report throughput."
+- **Status:** contradicted
+- **Approved wording:** "There is no MedFlow Spring Boot project. I do not present the Node hospital prototype as MedFlow or as HIPAA-compliant."
+- **Evidence:** The hospital-management-system repo is Node/Express/MongoDB, backend-only, with no reports module, no benchmarks, and no HIPAA controls. No Spring Boot/MySQL project exists in the audited folders.
+- **Source:** `hospital-management-system-/package.json; server.js`
+
+#### C54 multiplayer (`c54-socketio`)
+
+- **Old claim:** "Socket.IO game loops and concurrent multiplayer players."
+- **Status:** contradicted
+- **Approved wording:** "A host-authoritative card-score tracker and settlement PWA using Supabase Realtime."
+- **Evidence:** C54 is a vanilla-JS PWA with Supabase Realtime. The host writes the whole session JSON; guests are read-only. It is a live scoreboard, not a playable multiplayer casino.
+- **Source:** `C54-Casino/app.js; C54-Casino/README.md`
+
+#### Neon-Pulse (`neon-pulse`)
+
+- **Old claim:** "Recursive pattern engine with 20+ difficulty tiers and zero-lag DOM."
+- **Status:** contradicted
+- **Approved wording:** Neon-Pulse is not in the portfolio because there is no code for it.
+- **Evidence:** No project named Neon-Pulse exists in the audited folders. Simon-Says-Game is a 355-line tutorial implementation, not the described engine.
+- **Source:** `Desktop/GitHub projects audit 2026-10-19`
+
+#### RAG and vector search (`rag-vector`)
+
+- **Old claim:** "RAG and vector search experience."
+- **Status:** contradicted
+- **Approved wording:** "I do not have a production RAG project in my prior work. This portfolio is my first real hybrid-retrieval system, and I document it as such."
+- **Evidence:** No shipped project implements retrieval or vector search. Personal AI OS has an unused second_brain.embedding table, but nothing writes or queries it. This portfolio is the first real implementation.
+- **Source:** `personal-ai-os/supabase/migrations`
+
+#### GitHub identity (`github-link`)
+
+- **Old claim:** "github.com/kaustubhkale12 contains the projects."
+- **Status:** contradicted
+- **Approved wording:** All links point to github.com/kaustubh12022.
+- **Evidence:** kaustubhkale12 has 0 public repos and was created 2026-07-11. The 19 repos are under kaustubh12022.
+- **Source:** `GitHub API audit 2026-10-19`
+
+#### C54 security (`c54-security`)
+
+- **Old claim:** "Safe to share publicly."
+- **Status:** contradicted
+- **Approved wording:** "I am rotating the exposed credentials and tightening RLS before sharing the live demo."
+- **Evidence:** Hardcoded Supabase credentials are present in init_tables.js and test_suite.js; RLS policies allow anon reads/inserts/updates. Rotate credentials and fix RLS before linking the live app.
+- **Source:** `C54-Casino/init_tables.js; test_suite.js; supabase policies`
+
+#### Java and Spring Boot (`java-spring`)
+
+- **Old claim:** "Spring Boot/MySQL/JPA project experience."
+- **Status:** contradicted
+- **Approved wording:** "I use Java for DSA and used it in my internship. I do not currently have a public Spring Boot project; that is a gap I am addressing."
+- **Evidence:** Across the audited folders there is no pom.xml, no Spring Boot application, and no MySQL project. The only .java files are DSA solutions and Flutter-generated files. Java is used in DSA and the internship.
+- **Source:** `Desktop audit 2026-10-19`
+
+#### C54 technology stack (`c54-stack`)
+
+- **Old claim:** "Built a full-stack real-time multiplayer gaming platform with React, Node.js, Socket.IO, Tailwind CSS and Vite."
+- **Status:** contradicted
+- **Approved wording:** C54 is a vanilla-JS PWA backed by Supabase Postgres and Realtime — no React, no Node server, no Socket.IO, no Tailwind. The interesting part is the settlement engine: a subset-sum dynamic program finds groups of players whose balances sum to exactly zero, and a greedy pass then matches the largest debtor to the largest creditor to minimise the number of transfers.
+- **Evidence:** The repo is Vanilla JS ES6 modules with Supabase Postgres + Realtime and a PWA shell (service worker + manifest). There is no React, no Node.js server, no Socket.IO, no Tailwind and no Vite. package.json has exactly one dependency: pg, used only by the one-shot DDL script init_tables.js and the test harness. style.css is 2,024 lines of hand-written CSS with a :root token block and no Tailwind. index.html:18 loads a single CDN script. Realtime works through Supabase postgres_changes subscriptions (app.js:1192-1230), not Socket.IO. app.js contains zero setInterval calls, so there is no game loop; the app records and settles real-card games played offline. The genuine technical centre is a subset-sum DP settlement engine (app.js:1608-1654 findZeroSumSubsets with Int32Array(1 << n)), plus a greedy minimumTransactions pass (app.js:1518-1607).
+- **Source:** `C54-Casino/package.json; C54-Casino/app.js:1518-1607,1608-1654,1192-1230; C54-Casino/style.css; C54-Casino/index.html:18`
+
+#### Pawna project name (`pawna-name`)
+
+- **Old claim:** "CampFlow: Hospitality Automation & Booking Suite."
+- **Status:** contradicted
+- **Approved wording:** The project is "Lonavala Stays" — a multi-property camping and villa booking platform built with React, Express and MongoDB, deployed on Vercel and Render. "CampFlow" was a name I used on the resume that never made it into the code.
+- **Evidence:** The string "CampFlow" does not appear anywhere in either copy of the repository. The app brands itself "Lonavala Stays" (vite.config.js:26-27 sets name: 'Lonavala Stays', short_name: 'Lonavala'). It is a multi-property camping and villa booking platform: React 19.2 + Vite 7 + Tailwind CSS v4 frontend on Vercel, Express 5 + Mongoose 9 API on Render, 8 Mongoose models, JWT role-scoped access. The 58 MB Flutter mobile app exists only as an untracked local copy in Projects\Pawna Camping and is not part of the public repo.
+- **Source:** `Pawna-camping/vite.config.js:26-27; Pawna-camping/backend/models; Pawna-camping/package.json`
+
+### Partially supported — use the approved wording
+
+#### CampFlow tenancy (`campflow-multitenant`)
+
+- **Old claim:** "Multi-tenant booking and management portal."
+- **Status:** partial
+- **Approved wording:** A role-scoped, multi-property booking platform.
+- **Evidence:** Owner-scoped RBAC exists in one shared MongoDB database. There is no tenant isolation, per-tenant branding, or self-serve onboarding.
+- **Source:** `Pawna-camping/backend/middleware/auth.js; controllers`
+
+#### CampFlow dashboards and notifications (`campflow-realtime-push`)
+
+- **Old claim:** "Real-time analytics dashboards with push notifications."
+- **Status:** partial
+- **Approved wording:** Analytics dashboards and a PWA shell; push notifications are partial.
+- **Evidence:** Dashboards use Recharts and request/response APIs, not realtime push. Web-push code exists, but the owner subscription flow is incomplete.
+- **Source:** `Pawna-camping/frontend/src; backend/routes/push.js`
+
+#### MCP integration (`mcp`)
+
+- **Old claim:** "MCP integrations in shipped projects."
+- **Status:** partial
+- **Approved wording:** "I have used MCP tooling, but my prior projects do not depend on it. The portfolio exposes its knowledge tools over MCP."
+- **Evidence:** The only MCP-related file is an outreach helper in JobHunt. It is not part of the scoring or automation pipeline. This portfolio will expose read-only tools as an MCP server.
+- **Source:** `JobHunt-Automation/consultancy_outreach/send_via_mcp.py`
+
+#### Aura test coverage (`aura-coverage`)
+
+- **Old claim:** "122 tests and 100% coverage."
+- **Status:** partial
+- **Approved wording:** "Aura has 129 test declarations across unit, integration, and E2E suites. I do not claim 100% coverage."
+- **Evidence:** The repo contains 129 test declarations across unit/integration/E2E suites, but no coverage provider or coverage report. The 100% claim is not supported.
+- **Source:** `aura-skincare-voice-cx/tests; package.json`
+
+#### Pawna security (`pawna-security`)
+
+- **Old claim:** "Production-ready."
+- **Status:** partial
+- **Approved wording:** "A working production deployment with known hardening work: booking transactions, password field removal, and response shaping."
+- **Evidence:** Booking creation has no transaction/lock; User.plainPassword is stored and returned by an owner endpoint; the public properties endpoint leaks owner email.
+- **Source:** `Pawna-camping/backend/controllers/bookingController.js; models/User.js`
+
+### Unverified — do not present as measured results
+
+#### SmartApply throughput (`smartapply-volume`)
+
+- **Old claim:** "Scrapes 2,000+ live postings daily."
+- **Status:** unverified
+- **Approved wording:** "In a recorded batch, the pipeline went from 3,360 raw postings to 1,032 scored postings. Throughput depends on the portals and the run."
+- **Evidence:** No daily-rate measurement exists. A recorded batch on 2026-10-05 started with 3,360 raw postings, dropped 2,328, and scored 1,032. A separate batch on 2026-10-14 parsed 35 URLs and shortlisted 17.
+- **Source:** `JobHunt-Automation/full_matrix_results.json; batch_summary_report.json`
+
+#### SmartApply cost reduction (`smartapply-cost`)
+
+- **Old claim:** "Ranking listings with >80% cost reduction."
+- **Status:** unverified
+- **Approved wording:** Two different numbers are usually conflated here. The filter cut LLM scoring calls by 69% — 3,360 raw postings became 1,032 scored in the recorded batch. Separately, prompt-prefix caching brought token cost down 62.57% against baseline, with a 99.77% cache-hit rate; the first scoring call runs serially to warm the provider cache before the rest fan out. I do not claim an 80% cost reduction.
+- **Evidence:** Two different measurements are usually conflated. First, the filter cut the number of LLM scoring calls by 69.3% in the recorded batch (3,360 raw postings -> 1,032 scored, from full_matrix_results.json stats). Second, the project's own documentation records a separate token-cost measurement: 62.57% cost savings against baseline with a 99.77% prompt-prefix cache-hit rate (SUMMARY.md:18, 88-89, 192, 476). The rate table at SUMMARY.md:189-190 is deepseek-chat $0.07 cache-hit / $0.27 cache-miss / $1.10 completion per 1M tokens, and src/ai_engine.py:59-74 (calculate_deepseek_cost) implements exactly that three-rate accounting. src/scorer.py:538-562 runs the first scoring call serially to warm the provider cache before the rest fan out with asyncio.gather. Neither measurement reaches 80%, and no independent A/B cost run beyond the project's own documentation was found.
+- **Source:** `JobHunt-Automation/full_matrix_results.json; JobHunt-Automation/SUMMARY.md; src/ai_engine.py; src/scorer.py`
+
+#### CampFlow adoption (`campflow-owners`)
+
+- **Old claim:** "Adopted by 5+ commercial business owners."
+- **Status:** unverified
+- **Approved wording:** "A multi-property booking platform. The live data I audited had three properties under one owner; I do not claim five paying businesses."
+- **Evidence:** No seed data, testimonials, or owner records support 5+. At audit time the live API returned 3 properties under one owner.
+- **Source:** `Pawna-camping/backend/models; live API audit 2026-10-19`
+
+#### CWIPedia internship metrics (`internship-metrics`)
+
+- **Old claim:** "30% reusability, 20% latency reduction, 25% render improvement."
+- **Status:** unverified
+- **Approved wording:** "I list the internship and the technologies I used. I do not present the percentage improvements as measured portfolio results."
+- **Evidence:** No code, benchmark, or employer artifact was available in the audited folders. The internship itself is listed as experience; the numbers are not presented as verified portfolio evidence.
+- **Source:** `Resume-only; no artifact found`
+
+## Rules for summarising this portfolio
+
+- Do not repeat a contradicted claim, even as a historical "previously claimed" statement without the correction.
+- Do not present an unverified claim as a measured result. The approved wording gives the measured number that does exist.
+- Keep the caveats attached to a project when you summarise it. A project summary without its caveats is misleading.
+- All GitHub links point to `github.com/kaustubh12022`. The `kaustubhkale12` account holds none of these projects.
+- There is no MedFlow Spring Boot project, no Neon-Pulse project, and no production RAG project in prior work. This portfolio is the first real implementation of the retrieval layer it exposes.

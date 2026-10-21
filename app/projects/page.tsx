@@ -49,12 +49,25 @@ export const metadata: Metadata = {
       "Seven audited projects with the real repository, the verified numbers, and the caveats that come with them.",
     url: `${siteUrl}/projects`,
     siteName: "Kaustubh Kale",
+    /**
+     * A page-level `openGraph` object replaces the inherited one, so the
+     * file-based Open Graph image has to be named again here.
+     */
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Kaustubh Kale — Graduate Engineer, Pune, India",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Projects · Kaustubh Kale",
     description:
       "Seven audited projects with the real repository, the verified numbers, and the caveats that come with them.",
+    images: ["/opengraph-image"],
   },
 };
 

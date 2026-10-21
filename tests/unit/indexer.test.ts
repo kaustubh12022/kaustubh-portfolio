@@ -197,13 +197,15 @@ describe("scanContent - secrets", () => {
 
   it("keeps every fixture obviously synthetic", () => {
     // A real Google API key was committed in this file once. The scanner
-    // fixtures must be shaped like secrets but must never BE secrets, so
-    // every fixture is asserted to contain an obvious "this is a test"
-    // marker.
+    // fixtures must be shaped like secrets but must never BE secrets.
+    //
+    // Two fixtures are exempt by shape: the JWT is the RFC 7519 example
+    // token (published in the spec, not a credential), and the private key
+    // block is a header with no key material after it.
+    const EXEMPT = new Set(["jwt", "private-key-block"]);
+
     for (const [rule, fixture] of fixtures) {
-      if (rule === "private-key-block" || rule === "authorization-bearer-token") {
-        continue;
-      }
+      if (EXEMPT.has(rule)) continue;
       expect(
         /TESTONLY|fixture|example|abcdef|123456|pass1234|S3cretPass|Doe|John|000000/i.test(
           fixture,

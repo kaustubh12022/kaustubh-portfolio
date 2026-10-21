@@ -22,6 +22,22 @@ import "server-only";
  * answer's confidence and adds a caveat, so an answer built on a hallucinated
  * line number cannot look authoritative.
  *
+ * WHY "RESOLVES IN THE INDEX" IS THE LINE
+ * ---------------------------------------
+ * An earlier version also required the cited range to be one the server had
+ * actually served to the model during THIS request. That was too strict and
+ * it was firing constantly in production: a model that read
+ * `src/scorer.py:333-412` and then cited `src/scorer.py:549-559` (a real,
+ * perfectly resolvable chunk it had seen in the claim ledger's `source`
+ * field) had its citation dropped, its confidence downgraded and a caveat
+ * added - for pointing at a line that genuinely exists.
+ *
+ * The index check is the real protection against an invented line number: a
+ * range that does not exist in the indexed source cannot be shown, and a
+ * range that does exist is a location a reader can go and check. The
+ * "was it actually read" question is still tracked, but as a PROVENANCE
+ * signal in the route (it becomes a caveat), not as a rejection.
+ *
  * WHY THE RANGE CHECK IS "CONTAINED OR FULLY COVERED"
  * ---------------------------------------------------
  * The strict reading of the rule is "one indexed chunk whose line range
@@ -55,27 +71,6 @@ type ChunkRow = {
   end_line: number;
   content: string;
   symbol: string;
-};
-
-/** A range the server actually served to the model during this request. */
-export type ServedRange = {
-  projectId: string;
-  path: string;
-  startLine: number;
-  endLine: number;
-};
-
-/** Options for a validation pass. */
-export type EvidenceValidationOptions = {
-  /**
-   * The ranges the server handed to the model.
-   *
-   * A citation WITHOUT a quote is only accepted when it points at a range
-   * the model was actually given. That is the same guarantee a quote gives
-   * (the model could not have invented a range it never saw), and it costs
-   * no output tokens.
-   */
-  served?: ServedRange[];
 };
 
 const CHUNKS_FOR_PATH_SQL = `
@@ -124,12 +119,10 @@ function isFullyCovered(
  * Validate a batch of citations against the index.
  *
  * @param refs the citations the model asked to show
- * @param options the ranges the server actually served to the model
  * @returns the verified and the rejected citations
  */
 export async function validateEvidence(
   refs: EvidenceRef[],
-  options: EvidenceValidationOptions = {},
 ): Promise<EvidenceValidation> {
   const verified: EvidenceRef[] = [];
   const rejected: EvidenceRef[] = [];
@@ -153,15 +146,6 @@ export async function validateEvidence(
       rowsByKey.set(key, result.rows);
     }),
   );
-
-  // The ranges the model was actually given, grouped per file.
-  const servedByKey = new Map<string, ServedRange[]>();
-  for (const served of options.served ?? []) {
-    const key = `${served.projectId}::${served.path}`;
-    const list = servedByKey.get(key) ?? [];
-    list.push(served);
-    servedByKey.set(key, list);
-  }
 
   for (const ref of refs) {
     const rows = rowsByKey.get(`${ref.projectId}::${ref.path}`) ?? [];
@@ -209,26 +193,17 @@ export async function validateEvidence(
 
     if (typeof ref.quote === "string" && ref.quote.trim().length > 0) {
       // 3a. With a quote, the quote has to match the indexed text exactly.
+      //     This is the strictest form of the gate: the model has to have
+      //     reproduced the source, character for character.
       if (normalise(ref.quote) !== actual) {
         rejected.push({ ...ref, verified: false });
         continue;
       }
-    } else {
-      // 3b. Without a quote, the citation is only accepted when it points at
-      //     a range the model was actually given. A range it never saw is
-      //     exactly the hallucination this gate exists to catch.
-      const served = servedByKey.get(`${ref.projectId}::${ref.path}`) ?? [];
-      const servedRows: ChunkRow[] = served.map((item) => ({
-        start_line: item.startLine,
-        end_line: item.endLine,
-        content: "",
-        symbol: "",
-      }));
-      if (!isFullyCovered(servedRows, ref.startLine, ref.endLine)) {
-        rejected.push({ ...ref, verified: false });
-        continue;
-      }
     }
+    // 3b. Without a quote, the range has already been proven to exist in
+    //     the indexed source (steps 1 and 2), which is what the gate is
+    //     for. The route separately reports the citations that were NOT
+    //     read during this answer, as a provenance caveat.
 
     const symbol =
       ref.symbol ??

@@ -67,10 +67,24 @@ const doc = parseDocument(readFileSync(file, "utf8"));
 let changed = 0;
 const untouched: string[] = [];
 
-const questions = doc.get("__never__") === undefined ? null : null;
-void questions;
+/**
+ * The golden set is a top-level YAML sequence.
+ *
+ * `doc.contents` is typed as a union of every node kind, so the items have
+ * to be narrowed to the sequence shape before they can be iterated.
+ */
+const sequence = doc.contents;
+if (
+  !sequence ||
+  !("items" in sequence) ||
+  !Array.isArray(sequence.items)
+) {
+  throw new Error(
+    "evals/golden-set.yaml must be a top-level sequence of questions.",
+  );
+}
 
-for (const node of doc.contents.items) {
+for (const node of sequence.items) {
   const q = node as {
     get: (key: string, keepScalar?: boolean) => unknown;
   };

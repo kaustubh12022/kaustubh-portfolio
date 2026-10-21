@@ -8,8 +8,8 @@
  *
  * What is being asserted is the ONE property that matters for this project:
  * a citation that does not resolve against the source index is dropped, and
- * a citation that points at a range the model was never shown is dropped
- * even when the range happens to exist.
+ * a citation whose quote does not match the file at those lines is dropped
+ * even when the range itself exists.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -109,11 +109,9 @@ function ref(overrides: Partial<EvidenceRef> = {}): EvidenceRef {
 /* ------------------------------------------------------------------ */
 
 describe("validateEvidence", () => {
-  it("accepts a range the model was shown", async () => {
+  it("accepts a range that resolves in the index", async () => {
     reset();
-    const result = await validateEvidence([ref()], {
-      served: [{ projectId: PROJECT, path: PATH, startLine: 1, endLine: 5 }],
-    });
+    const result = await validateEvidence([ref()]);
 
     expect(result.rejected).toHaveLength(0);
     expect(result.verified).toHaveLength(1);
@@ -122,25 +120,18 @@ describe("validateEvidence", () => {
     expect(result.verified[0]?.symbol).toBe("score_jobs");
   });
 
-  it("rejects a range the model was never shown", async () => {
+  it("accepts a sub-range of an indexed chunk", async () => {
     reset();
-    const result = await validateEvidence([ref()]);
+    const result = await validateEvidence([ref({ startLine: 3, endLine: 3 })]);
 
-    expect(result.verified).toHaveLength(0);
-    expect(result.rejected).toHaveLength(1);
-    expect(result.rejected[0]?.verified).toBe(false);
+    expect(result.rejected).toHaveLength(0);
+    expect(result.verified).toHaveLength(1);
+    expect(result.verified[0]?.label).toBe("src/scorer.py:3");
   });
 
   it("rejects a citation for a file that is not in the index", async () => {
     reset();
-    const result = await validateEvidence(
-      [ref({ path: "src/does_not_exist.py" })],
-      {
-        served: [
-          { projectId: PROJECT, path: "src/does_not_exist.py", startLine: 1, endLine: 5 },
-        ],
-      },
-    );
+    const result = await validateEvidence([ref({ path: "src/does_not_exist.py" })]);
 
     expect(result.verified).toHaveLength(0);
     expect(result.rejected).toHaveLength(1);
@@ -148,9 +139,15 @@ describe("validateEvidence", () => {
 
   it("rejects a citation for a project that is not in the index", async () => {
     reset();
-    const result = await validateEvidence([ref({ projectId: "c54" })], {
-      served: [{ projectId: "c54", path: PATH, startLine: 1, endLine: 5 }],
-    });
+    const result = await validateEvidence([ref({ projectId: "c54" })]);
+
+    expect(result.verified).toHaveLength(0);
+    expect(result.rejected).toHaveLength(1);
+  });
+
+  it("rejects a range that is not covered by the indexed chunks", async () => {
+    reset();
+    const result = await validateEvidence([ref({ startLine: 100, endLine: 120 })]);
 
     expect(result.verified).toHaveLength(0);
     expect(result.rejected).toHaveLength(1);
@@ -166,7 +163,6 @@ describe("validateEvidence", () => {
           quote: "    # 2. Filter irrelevant and senior jobs synchronously first",
         }),
       ],
-      { served: [{ projectId: PROJECT, path: PATH, startLine: 1, endLine: 5 }] },
     );
 
     expect(result.rejected).toHaveLength(0);
@@ -178,7 +174,6 @@ describe("validateEvidence", () => {
     reset();
     const result = await validateEvidence(
       [ref({ quote: "    # 2. Filter irrelevant roles with a neural net" })],
-      { served: [{ projectId: PROJECT, path: PATH, startLine: 1, endLine: 5 }] },
     );
 
     expect(result.verified).toHaveLength(0);
@@ -189,7 +184,6 @@ describe("validateEvidence", () => {
     reset();
     const result = await validateEvidence(
       [ref({ quote: "    # 2. Filter irrelevant and senior jobs synchronously first" })],
-      { served: [{ projectId: PROJECT, path: PATH, startLine: 1, endLine: 5 }] },
     );
 
     // The quote is line 3; the cited range is lines 1-5. The text at
@@ -200,25 +194,13 @@ describe("validateEvidence", () => {
 
   it("rejects an inverted or empty line range", async () => {
     reset();
-    const result = await validateEvidence(
-      [ref({ startLine: 9, endLine: 4 }), ref({ startLine: 0, endLine: 0 })],
-      {
-        served: [{ projectId: PROJECT, path: PATH, startLine: 1, endLine: 5 }],
-      },
-    );
+    const result = await validateEvidence([
+      ref({ startLine: 9, endLine: 4 }),
+      ref({ startLine: 0, endLine: 0 }),
+    ]);
 
     expect(result.verified).toHaveLength(0);
     expect(result.rejected).toHaveLength(2);
-  });
-
-  it("rejects a range that is not covered by the indexed chunks", async () => {
-    reset();
-    const result = await validateEvidence([ref({ startLine: 100, endLine: 120 })], {
-      served: [{ projectId: PROJECT, path: PATH, startLine: 100, endLine: 120 }],
-    });
-
-    expect(result.verified).toHaveLength(0);
-    expect(result.rejected).toHaveLength(1);
   });
 
   it("returns an empty result for an empty batch", async () => {

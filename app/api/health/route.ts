@@ -22,6 +22,12 @@ import "server-only";
 
 import { EMBEDDING_MODEL } from "@/lib/retrieval/embed";
 import { getProjectStats } from "@/lib/retrieval/search";
+import { cacheSize } from "@/lib/ai/cache";
+import {
+  dailyCeilingUsd,
+  spendRemainingUsd,
+  spendTodayUsd,
+} from "@/lib/ai/spend";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +47,18 @@ export async function GET(): Promise<Response> {
         projects: stats.length,
         embeddingModel: models[0] ?? EMBEDDING_MODEL,
         files,
+        /**
+         * The spend guard. `spendUsd` is what this instance has spent
+         * today, `remainingUsd` is what is left of the ceiling, and
+         * `cachedAnswers` is how many answers are being served from memory
+         * instead of the model.
+         */
+        spend: {
+          usdToday: Number(spendTodayUsd().toFixed(6)),
+          ceilingUsd: dailyCeilingUsd(),
+          remainingUsd: Number(spendRemainingUsd().toFixed(6)),
+          cachedAnswers: cacheSize(),
+        },
         indexedAt:
           stats.length > 0
             ? stats.map((row) => ({

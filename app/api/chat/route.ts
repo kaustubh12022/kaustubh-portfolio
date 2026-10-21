@@ -9,6 +9,9 @@ import "server-only";
  * -----------------
  *   1. Rate limit (per IP, in memory, 10 requests / 5 minutes).
  *   2. Read the conversation, cap the input, keep the last N turns.
+ *   2b. Answer cache: an identical question against the same index is
+ *       answered from memory. This is the largest cost saving in the
+ *       system - see `lib/ai/cache.ts` for the measurement behind it.
  *   3. Run `streamText` with the twelve read-only tools, at most 4 steps.
  *   4. Stream the answer text to the browser as the model writes it.
  *   5. When the model finishes, validate every citation it declared against
@@ -45,8 +48,11 @@ import {
   downgradeConfidence,
   validateEvidence,
 } from "@/lib/ai/citations";
+import { cacheKey, readCache, writeCache } from "@/lib/ai/cache";
 import { computeCost, logAnswer, readTokenUsage } from "@/lib/ai/cost";
+import { getProjects } from "@/lib/content/load";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
+import { isOverDailySpendCeiling, recordSpend } from "@/lib/ai/spend";
 import {
   checkRateLimit,
   clientKey,
@@ -75,8 +81,31 @@ export const MODEL_ID = "deepseek-flash";
 /** The maximum number of characters accepted from ONE message. */
 export const MAX_INPUT_CHARS = 500;
 
-/** The maximum number of output tokens. */
-export const MAX_OUTPUT_TOKENS = 700;
+/**
+ * The maximum number of output tokens PER MODEL STEP.
+ *
+ * This was 700. It was raised to 1400 for a measured reason.
+ *
+ * A tool-calling step has to carry TWO things in one completion: the answer
+ * prose AND the `render_visual` call. Measured in production traffic at 700:
+ *
+ *   - a 160 word answer is ~230 tokens,
+ *   - the `render_visual` payload is ~120 tokens for a spec plus three
+ *     citations, but ~350 tokens when the model writes two long caveats,
+ *   - and the model pads the caveats with prose it does not need.
+ *
+ * At 700 the completion was cut off MID-JSON. The provider then rejects the
+ * tool call with `AI_InvalidToolInputError: Unterminated string in JSON`,
+ * which is UNRECOVERABLE: the model never sees a tool result, the structured
+ * declaration is lost, and the answer ships with no visual and no citations.
+ * That is the single worst failure mode in this pipeline, and it was firing
+ * on roughly one request in fifteen.
+ *
+ * 1400 fits the prose plus the declaration with room to spare. The cost
+ * impact is bounded: output tokens are $0.60/M, so 700 extra tokens on the
+ * final step is $0.00042 - less than a tenth of the request's total.
+ */
+export const MAX_OUTPUT_TOKENS = 1400;
 
 /** The maximum number of model steps (tool loop iterations). */
 export const MAX_STEPS = 4;
@@ -84,10 +113,29 @@ export const MAX_STEPS = 4;
 /**
  * How many steps the model may spend exploring before it has to answer.
  *
- * After this, the only tool left in the schema is `render_visual`, so the
- * model has to write the answer instead of collecting more code.
+ * After this, the four code-exploration tools are removed from the schema,
+ * so the model has to write the answer instead of collecting more code.
  */
 export const MAX_EXPLORATION_STEPS = 2;
+
+/**
+ * The tools that stay available in the final step.
+ *
+ * The cheap content-layer tools and the claim ledger stay (a few hundred
+ * bytes each, and the prompt cache almost always hits them). The four
+ * code-exploration tools go: they pull large source payloads, they are
+ * uncacheable, and they are what turns an answer into a five-minute crawl.
+ */
+export const FINAL_STEP_TOOLS = [
+  "get_claim",
+  "get_profile",
+  "get_project",
+  "get_architecture",
+  "get_metrics",
+  "get_assets",
+  "compare_projects",
+  "render_visual",
+] as const;
 
 /** How many past turns are sent to the model. */
 export const MAX_HISTORY_MESSAGES = 12;
@@ -173,6 +221,17 @@ function capText(text: string): { text: string; truncated: boolean } {
   if (text.length <= MAX_INPUT_CHARS) return { text, truncated: false };
   return { text: text.slice(0, MAX_INPUT_CHARS), truncated: true };
 }
+
+/* ------------------------------------------------------------------ */
+/* The daily spend ceiling                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The spend ledger lives in `lib/ai/spend.ts` so the health endpoint can
+ * report the same number without importing a route file. The ceiling is
+ * checked before the model is called; see `docs/COST_POLICY.md` for the
+ * measurement that motivated it.
+ */
 
 /* ------------------------------------------------------------------ */
 /* The structured result                                               */
@@ -296,6 +355,69 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   const question = capped[capped.length - 1]?.text ?? "";
+
+  // 3. The answer cache --------------------------------------------------
+  //
+  // The same question against the same index produces the same grounded
+  // answer, so it is served from memory instead of paying for the model
+  // again. Measured on this deployment, repeating one question nine times
+  // cost $0.018 - this line removes that.
+  const cacheId = cacheKey(
+    question,
+    capped.slice(0, -1).map((message) => ({
+      role: message.role,
+      text: message.text,
+    })),
+  );
+  const cached = readCache(cacheId);
+  const replay = cached ? replayCachedAnswer(cached) : null;
+  if (replay) {
+    return createUIMessageStreamResponse({
+      stream: createUIMessageStream({
+        async execute({ writer }) {
+          writer.write({ type: "start" });
+          writer.write({ type: "text-start", id: "0" });
+          writer.write({ type: "text-delta", id: "0", delta: replay.text });
+          writer.write({ type: "text-end", id: "0" });
+          writer.write({ type: "data-visual", data: replay.payload });
+        },
+      }),
+      headers: {
+        "x-ratelimit-limit": String(RATE_LIMIT_MAX),
+        "x-ratelimit-remaining": String(limit.remaining),
+        "x-cache": "HIT",
+        "cache-control": "no-store",
+      },
+    });
+  }
+
+  // 3b. The daily spend ceiling ------------------------------------------
+  //
+  // When the day's budget is gone, the model is not called at all. The
+  // answer comes from the verified content layer, and it says plainly that
+  // the assistant is running in its reduced mode. A portfolio that says "I
+  // am out of budget" is more useful than one that returns a 500.
+  if (isOverDailySpendCeiling()) {
+    const fallback = buildBudgetFallback(question);
+    return createUIMessageStreamResponse({
+      stream: createUIMessageStream({
+        async execute({ writer }) {
+          writer.write({ type: "start" });
+          writer.write({ type: "text-start", id: "0" });
+          writer.write({ type: "text-delta", id: "0", delta: fallback.text });
+          writer.write({ type: "text-end", id: "0" });
+          writer.write({ type: "data-visual", data: fallback.payload });
+        },
+      }),
+      headers: {
+        "x-ratelimit-limit": String(RATE_LIMIT_MAX),
+        "x-ratelimit-remaining": String(limit.remaining),
+        "x-cache": "BUDGET",
+        "cache-control": "no-store",
+      },
+    });
+  }
+
   const modelMessages = await convertToModelMessages(
     capped.map((message) => ({
       id: message.id,
@@ -331,13 +453,25 @@ export async function POST(request: Request): Promise<Response> {
      *
      * Without this, a model that likes to look at things can spend every one
      * of the four steps on tool calls and never write a single word - the
-     * answer is then empty and the visitor gets nothing. `activeTools`
-     * removes the exploration tools from the schema in the later steps, so
-     * the only thing left to do is write the answer and declare the result.
+     * answer is then empty and the visitor gets nothing.
+     *
+     * WHY THE CHEAP TOOLS STAY AVAILABLE
+     * ---------------------------------
+     * An earlier version restricted the final step to `render_visual` ALONE.
+     * That is a trap: the model still reaches for `get_claim` or
+     * `read_file`, the provider rejects the call with
+     * `AI_NoSuchToolError`, and the step is burned on an error the model
+     * cannot recover from. Production traffic showed exactly that.
+     *
+     * So the final step keeps the tools that are cheap and fast - the
+     * content layer and the claim ledger, which are a few hundred bytes each
+     * and are almost always cache hits - and drops only the four tools that
+     * pull megabytes of source code and burn the clock:
+     * `search_code`, `read_file`, `find_symbol` and `get_data_model`.
      */
     prepareStep: ({ stepNumber }) => {
       if (stepNumber >= MAX_EXPLORATION_STEPS) {
-        return { activeTools: ["render_visual"] };
+        return { activeTools: [...FINAL_STEP_TOOLS] };
       }
       return {};
     },
@@ -389,6 +523,15 @@ export async function POST(request: Request): Promise<Response> {
 
       writer.write({ type: "data-visual", data: payload });
 
+      // 5b. Store the answer in the cache ----------------------------------
+      //
+      // Only a COMPLETE answer is cached. A truncated or degraded answer
+      // must not be replayed to the next visitor as if it were a good one.
+      const answerText = await Promise.resolve(result.text).catch(() => "");
+      if (answerText.trim() && payload.confidence !== "low") {
+        writeCache(cacheId, JSON.stringify({ text: answerText, payload }));
+      }
+
       // 6. The cost --------------------------------------------------------
       await logCost(result, {
         state,
@@ -418,6 +561,81 @@ export async function POST(request: Request): Promise<Response> {
 /* ------------------------------------------------------------------ */
 /* The validated result                                                */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Answer without the model when the daily budget is exhausted.
+ *
+ * This path costs nothing: it reads the verified content layer, matches the
+ * question against the project list, and returns an honest summary with the
+ * real links. It never invents an answer, and it always says that the
+ * assistant is in its reduced mode so the reader knows why the answer is
+ * thinner than usual.
+ */
+function buildBudgetFallback(question: string): {
+  text: string;
+  payload: VisualPayload;
+} {
+  const lower = question.toLowerCase();
+  const projects = getProjects();
+
+  const match = projects.find((project) =>
+    lower.includes(project.name.toLowerCase()) ||
+    lower.includes(project.id.toLowerCase()),
+  );
+
+  const text = match
+    ? `I am running in reduced mode right now: the assistant's daily model budget is used up, so I am answering from the verified content layer instead of the live model. ` +
+      `**${match.name}** — ${match.tagline}. ${match.summary}\n\n` +
+      `The repository is public: ${match.repo ?? "see the project index"}.\n\n` +
+      (match.caveats.length
+        ? `What it does not do: ${match.caveats.join(" ")}\n\n`
+        : "") +
+      `Browse the full project page for the screenshots, the measured numbers and the source paths.`
+    : `I am running in reduced mode right now: the assistant's daily model budget is used up, so I am answering from the verified content layer instead of the live model.\n\n` +
+      `The portfolio covers ${projects.length} audited projects. ` +
+      `Ask about one by name - ${projects
+        .map((project) => project.name)
+        .join(", ")} - or browse the project index for the source code, the measured numbers and the caveats.`;
+
+  return {
+    text,
+    payload: {
+      visual: match ? { kind: "project", projectId: match.id } : { kind: "profile" },
+      evidence: [],
+      followUps: ["Browse the project index", "What can you prove with numbers?"],
+      confidence: "low",
+      caveats: [
+        "The assistant is in reduced mode: the daily model budget is exhausted, so this answer comes from the verified content layer and the source code was not checked for this question.",
+      ],
+      mode: "claims-only",
+      droppedCitations: 0,
+    },
+  };
+}
+
+/**
+ * Rehydrate a cached answer for replay.
+ *
+ * A malformed cache entry is discarded rather than served: a cache that can
+ * crash the endpoint is worse than no cache. `null` means "do not replay
+ * this", and the caller falls through to a fresh answer.
+ */
+function replayCachedAnswer(raw: string): {
+  text: string;
+  payload: VisualPayload;
+} | null {
+  try {
+    const parsed = JSON.parse(raw) as { text?: unknown; payload?: unknown };
+    const text = typeof parsed.text === "string" ? parsed.text : "";
+    const payload = parsed.payload as VisualPayload | undefined;
+    if (!text.trim() || !payload || typeof payload !== "object") {
+      return null;
+    }
+    return { text, payload };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Derive a visual from the tools the model actually called.
@@ -503,6 +721,24 @@ function servedEvidence(state: ToolState): VisualPayload["evidence"] {
 }
 
 /**
+ * Was a citation range actually opened during this answer?
+ *
+ * The server records every chunk it hands to the model. A citation that
+ * points outside that set still resolves in the index, but the assistant
+ * did not read it - which is worth telling the reader.
+ */
+function wasServed(state: ToolState, ref: EvidenceRef): boolean {
+  for (const chunk of state.served.values()) {
+    if (chunk.projectId !== ref.projectId) continue;
+    if (chunk.path !== ref.path) continue;
+    if (chunk.startLine <= ref.startLine && chunk.endLine >= ref.endLine) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Turn the model's declaration into a validated, honest payload.
  *
  * The citations the model asked for are re-read from the index. One that
@@ -554,14 +790,7 @@ async function buildPayload(
         : base;
     });
 
-    const validation = await validateEvidence(candidates, {
-      served: [...state.served.values()].map((chunk) => ({
-        projectId: chunk.projectId,
-        path: chunk.path,
-        startLine: chunk.startLine,
-        endLine: chunk.endLine,
-      })),
-    });
+    const validation = await validateEvidence(candidates);
     evidence = validation.verified.map((ref) => ({
       label: ref.label,
       projectId: ref.projectId,
@@ -592,6 +821,31 @@ async function buildPayload(
         } could not be verified against the source index and ${
           droppedCitations === 1 ? "was" : "were"
         } dropped.`,
+      );
+    }
+
+    // PROVENANCE: a citation can resolve in the index and still point at
+    // lines this answer never opened. That is not a rejection - the line
+    // really exists and a reader can check it - but it is worth saying.
+    const unread = validation.verified.filter(
+      (ref) => !wasServed(state, ref),
+    );
+    if (unread.length > 0) {
+      console.warn(
+        "[ai] citations that were not read in this answer:",
+        JSON.stringify(
+          unread.map((ref) => ({
+            projectId: ref.projectId,
+            path: ref.path,
+            startLine: ref.startLine,
+            endLine: ref.endLine,
+          })),
+        ),
+      );
+      caveats.push(
+        `${unread.length} citation${
+          unread.length === 1 ? "" : "s"
+        } point at source lines that were not opened in this answer; they resolve in the index, but the assistant did not read them.`,
       );
     }
   } else if (state.served.size > 0) {
@@ -653,6 +907,9 @@ async function logCost(
     const tokens = readTokenUsage(usage);
     const cost = computeCost(tokens);
     const latencyMs = Date.now() - context.startedAt;
+
+    // The in-process daily ceiling is fed by the real cost of every request.
+    recordSpend(cost.totalCost);
 
     await logAnswer({
       question: context.question,

@@ -170,7 +170,7 @@ const FOCUS = z
 const PROJECT_ID = z
   .string()
   .min(1)
-  .max(64)
+  .max(200)
   .describe(
     "Project id. Known ids: smartapply, pawna, c54, aura, personal-ai-os, dayscore.",
   );
@@ -184,7 +184,7 @@ const PROJECT_ID = z
 const FILE_PATH = z
   .string()
   .min(1)
-  .max(300)
+  .max(600)
   .describe(
     "Repo-relative POSIX path exactly as it appeared in a search_code or find_symbol result, e.g. 'src/ai_engine.py'.",
   );
@@ -198,11 +198,9 @@ const FILE_PATH = z
  * and it burned so many output tokens that the tool call itself was cut off
  * mid-JSON by the output cap, which lost the whole structured result.
  *
- * The server does not need the quote. It re-reads the index, and it knows
- * exactly which ranges it handed the model during this request, so a
- * citation is accepted when it points at a range the model was shown and
- * rejected when it does not. That is the same guarantee a quote gives, at
- * zero output tokens.
+ * The server does not need the quote. It re-reads the index and checks that
+ * the cited range really is covered by the indexed chunks of that file, and
+ * when a quote IS present it has to match the indexed text exactly.
  *
  * Every field is OPTIONAL and permissive on purpose. A strict schema would
  * reject the whole tool call when the model gets one detail wrong, and a
@@ -211,11 +209,11 @@ const FILE_PATH = z
  * `execute`, which returns a message the model can act on.
  */
 const EVIDENCE_ITEM = z.object({
-  projectId: z.string().max(64).optional(),
-  path: z.string().max(300).optional(),
+  projectId: z.string().max(200).optional(),
+  path: z.string().max(600).optional(),
   startLine: z.coerce.number().int().optional(),
   endLine: z.coerce.number().int().optional(),
-  symbol: z.string().max(200).optional(),
+  symbol: z.string().max(400).optional(),
 });
 
 /**
@@ -224,33 +222,37 @@ const EVIDENCE_ITEM = z.object({
  * As permissive as the evidence: the shape is checked inside `execute`, not
  * by the schema, so a slightly wrong declaration still produces a tool
  * result (and therefore a usable answer).
+ *
+ * NOTE ON THE LIMITS: there is deliberately NO `max()` on any array and no
+ * minimum on `spec`. A schema that rejects the call is worse than a schema
+ * that accepts a bad value, because a rejected call is UNRECOVERABLE - the
+ * model never sees a tool result and the whole structured declaration is
+ * lost. Every bound is applied inside `execute` instead, where it becomes a
+ * friendly message the model can act on.
  */
 const RENDER_INPUT = z.object({
   spec: z
-    .record(z.string(), z.unknown())
+    .unknown()
     .describe(
       "The visual spec object. One of: {kind:'profile'} | {kind:'education'} | {kind:'skills'} | {kind:'project',projectId} | {kind:'architecture',projectId} | {kind:'flow',projectId} | {kind:'data-model',projectId} | {kind:'code',projectId,path,startLine,endLine} | {kind:'comparison',projectIds,dimension?} | {kind:'metrics',projectId?} | {kind:'claims',claimIds} | {kind:'contact'}",
     ),
   evidence: z
     .array(EVIDENCE_ITEM)
-    .max(12)
     .default([])
     .describe(
       "The citations you used. Each needs projectId, path, startLine and endLine - the line range of a chunk you read. Do not paste source text into the tool call.",
     ),
   followUps: z
-    .array(z.string().max(300))
-    .max(6)
+    .array(z.string().max(400))
     .default([])
     .describe("Up to three short follow-up questions."),
   confidence: z
     .string()
-    .max(20)
+    .max(40)
     .default("medium")
     .describe("'high' | 'medium' | 'low'."),
   caveats: z
     .array(z.string().max(600))
-    .max(8)
     .default([])
     .describe("The honest limits of the answer."),
 });
@@ -324,8 +326,56 @@ export function parseVisualSpec(
 /* Small helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-/** Cap a chunk body so one huge file cannot blow the context window. */
-const MAX_CHUNK_CHARS = 6000;
+/**
+ * Cap a chunk body so one huge file cannot blow the context window.
+ *
+ * WHY 2200 AND NOT 6000
+ * --------------------
+ * This number is the single biggest cost lever in the whole system, so it is
+ * worth being precise about the arithmetic.
+ *
+ * DeepSeek bills a cache MISS at $0.15 per million input tokens and a cache
+ * HIT at $0.003 - a 50x difference. The system prompt and the tool schemas
+ * are byte-stable, so they always hit the cache and cost almost nothing.
+ *
+ * The tool RESULTS are not stable: the code chunks returned by `search_code`
+ * are different for every question, so they are a cache MISS every single
+ * time. They are therefore billed at the full 50x rate.
+ *
+ * Measured on this deployment: 516 requests cost $0.5156, of which
+ * $0.313 (61%) was cache-miss input. Almost all of that miss was chunk
+ * bodies. The average request carried ~4,042 uncached tokens.
+ *
+ * At 6,000 characters per chunk and 6 chunks per search, a single search
+ * could inject ~36,000 characters - roughly 9,000 tokens - of uncached code
+ * into the prompt. At 2,200 characters and 4 chunks the worst case is
+ * ~2,200 tokens, a 4x reduction, and the model still sees the function
+ * signature, the docstring and the body of every hit it needs to answer
+ * "where is this implemented".
+ *
+ * A chunk is a function or a class, so 2,200 characters is usually the whole
+ * thing. When it is not, `truncated: true` is returned and the model can ask
+ * for a narrower range with `read_file`, which is charged the same but
+ * returns only what was asked for.
+ */
+const MAX_CHUNK_CHARS = 2200;
+
+/**
+ * The default number of chunks `search_code` returns.
+ *
+ * Four is enough to answer the question and to see the surrounding
+ * structure; six was paying for two chunks nobody read.
+ */
+export const DEFAULT_SEARCH_LIMIT = 4;
+
+/**
+ * The hard ceiling on chunks returned by `search_code`.
+ *
+ * The input schema accepts anything up to 30 so a "give me 20 chunks" call
+ * is never REJECTED (a rejected tool call is unrecoverable), and the limit
+ * is applied in `execute` instead.
+ */
+export const MAX_SEARCH_LIMIT = 6;
 
 function clip(text: string): { text: string; truncated: boolean } {
   if (text.length <= MAX_CHUNK_CHARS) return { text, truncated: false };
@@ -551,22 +601,24 @@ export function createTools(state: ToolState): ToolSet {
     inputSchema: z.object({
       query: z
         .string()
-        .min(2)
-        .max(200)
+        .min(1)
+        .max(600)
         .describe("A natural language question or a bare identifier."),
       projectId: z
         .string()
         .min(1)
-        .max(64)
+        .max(200)
         .optional()
         .describe("Restrict the search to one project."),
       limit: z
         .number()
         .int()
         .min(1)
-        .max(10)
+        .max(30)
         .optional()
-        .describe("How many chunks to return. Default 6."),
+        .describe(
+          "How many chunks to return. Default 4, hard maximum 6. More chunks means more uncached input tokens, so prefer 4 and use read_file for detail.",
+        ),
     }),
     execute: async ({
       query: q,
@@ -580,11 +632,15 @@ export function createTools(state: ToolState): ToolSet {
       note("search_code", { query: q, projectId, limit });
       try {
         const embedding = await embedQuery(q);
+        // The SCHEMA accepts a large limit so the call is never rejected;
+        // the real cap is applied here. A rejected tool call is
+        // unrecoverable, a clamped one is not.
+        const capped = Math.min(limit ?? DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
         const hits = await searchChunks(
           {
             query: q,
             projectId,
-            limit: limit ?? 6,
+            limit: capped,
           },
           embedding,
         );
@@ -730,7 +786,7 @@ export function createTools(state: ToolState): ToolSet {
       "Find a named function, class or method in the indexed repositories by exact name (with a fuzzy fallback). Returns the file, the line range and the source. Use it when the question names an identifier.",
     inputSchema: z.object({
       projectId: PROJECT_ID,
-      name: z.string().min(1).max(200).describe("The identifier, e.g. 'calculate_deepseek_cost'."),
+      name: z.string().min(1).max(400).describe("The identifier, e.g. 'calculate_deepseek_cost'."),
     }),
     execute: async ({ projectId, name }: { projectId: string; name: string }) => {
       note("find_symbol", { projectId, name });
@@ -777,7 +833,7 @@ export function createTools(state: ToolState): ToolSet {
       projectId: z
         .string()
         .min(1)
-        .max(64)
+        .max(200)
         .optional()
         .describe("Restrict to one project."),
     }),
@@ -797,7 +853,7 @@ export function createTools(state: ToolState): ToolSet {
       projectId: z
         .string()
         .min(1)
-        .max(64)
+        .max(200)
         .optional()
         .describe("Restrict to one project."),
     }),
@@ -815,7 +871,7 @@ export function createTools(state: ToolState): ToolSet {
       id: z
         .string()
         .min(1)
-        .max(120)
+        .max(300)
         .describe(
           "The claim id (e.g. 'smartapply-cost') or its topic (e.g. 'SmartApply cost reduction').",
         ),
@@ -837,16 +893,16 @@ export function createTools(state: ToolState): ToolSet {
 
   const compareProjectsTool = tool({
     description:
-      "Compare two to four projects side by side on one dimension: stack, status, features, metrics, caveats or everything. Use it for 'how do X and Y differ'.",
+      "Compare two to six projects side by side on one dimension: stack, status, features, metrics, caveats or everything. Use it for 'how do X and Y differ'.",
     inputSchema: z.object({
       projectIds: z
-        .array(z.string().min(1).max(64))
-        .min(2)
-        .max(4)
-        .describe("Two to four project ids."),
+        .array(z.string().min(1).max(200))
+        .min(1)
+        .max(20)
+        .describe("One to twenty project ids. The first six are compared."),
       dimension: z
         .string()
-        .max(60)
+        .max(120)
         .optional()
         .describe(
           "Optional narrowing: 'stack' | 'status' | 'features' | 'metrics' | 'caveats' | 'summary'.",
@@ -860,7 +916,11 @@ export function createTools(state: ToolState): ToolSet {
       dimension?: string;
     }) => {
       note("compare_projects", { projectIds, dimension });
-      const rows = projectIds
+      // The SCHEMA is permissive so the call can never be rejected for being
+      // too big; the limit is applied here, where a too-large request becomes
+      // a note the model can act on rather than a dead tool call.
+      const selected = projectIds.slice(0, 6);
+      const rows = selected
         .map((id) => getProject(id))
         .filter((project): project is NonNullable<typeof project> => Boolean(project));
 
