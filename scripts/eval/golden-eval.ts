@@ -5,10 +5,27 @@
  *   npx tsx scripts/eval/golden-eval.ts [--questions=q001,q002]
  *                                   [--bucket=code_explanation,claim_correction]
  *                                   [--per-bucket=10] [--json] [--url=http://localhost:3000]
+ *                                   [--max-spend=0.15] [--dry-run] [--resume]
  *
  * Every question goes through the LIVE `/api/chat` route over HTTP, so the
  * whole pipeline is exercised: the model, the twelve tools, the citation
  * validator, the visual declaration and the cost log.
+ *
+ * THE COST CONTROLS
+ * -----------------
+ * This benchmark spends REAL money, so it cannot be run carelessly:
+ *
+ *   --max-spend=<usd>  the hard ceiling for THIS run. Default $0.15, which
+ *                      is about ONE full 150 question run. The run stops the
+ *                      moment the spend crosses it.
+ *   --dry-run          prints what WOULD run, the per bucket count and the
+ *                      estimated cost, then exits WITHOUT calling the model.
+ *                      The estimate is `count * $0.0009 * 1.2`.
+ *   --resume           continues a killed run from `evals/.last-run.json`
+ *                      instead of paying for the same answers twice.
+ *
+ * Every answer line prints the running spend and the ceiling, so the cost
+ * is visible while the run happens and not only in the summary.
  *
  * WHAT IS CHECKED, PER QUESTION
  * ------------------------------
@@ -29,7 +46,10 @@
  * --------
  * The route writes every request into `answer_log` with the three token
  * counts and the priced cost. The benchmark reads the row back, so the
- * reported spend is the same number the app itself booked.
+ * reported spend is the same number the app itself booked. Only the rows
+ * this run wrote are counted: an answer served from the route's answer cache
+ * writes no row and costs nothing, and it must not inherit the previous
+ * run's cost for the same question.
  *
  * THE RATE LIMIT
  * --------------
@@ -138,7 +158,11 @@ function parseArgs(argv: string[]): CliOptions {
       for (const pair of arg.slice("--take=".length).split(",")) {
         const [bucket, count] = pair.split(":");
         if (bucket && count) {
-          options.take[bucket.trim()] = Number(count);
+          const key = bucket.trim();
+          const value = Number(count);
+          // The same bucket may be named twice: the larger cap wins, so
+          // `--take=x:5 --take=x:10` means ten, not five.
+          options.take[key] = Math.max(options.take[key] ?? 0, value);
         }
       }
     } else if (arg.startsWith("--url=")) {
@@ -738,10 +762,16 @@ if (options.perBucket !== null) {
   });
 }
 if (Object.keys(options.take).length > 0) {
+  // `--take` is a SLICE, not a cap: it selects the named buckets and caps
+  // each of them. The buckets that were NOT named are left out.
+  //
+  // The old behaviour (cap the named buckets, keep every other bucket at
+  // full size) turned `--take=claim_correction:12` into a 138 question run,
+  // which is exactly the accident the spend ceiling exists to prevent.
   const seen = new Map<string, number>();
   selected = selected.filter((question) => {
     const cap = options.take[question.bucket];
-    if (cap === undefined) return true;
+    if (cap === undefined) return false;
     const count = seen.get(question.bucket) ?? 0;
     if (count >= cap) return false;
     seen.set(question.bucket, count + 1);
@@ -1217,6 +1247,14 @@ if (options.json) {
     console.log(text);
   }
 } else {
+  // `--out` ALWAYS writes the machine readable report, even without
+  // `--json`: the human summary and the JSON are two views of the same
+  // run, and a flag that silently does nothing is a bug.
+  if (options.out) {
+    writeFileSync(options.out, JSON.stringify(report, null, 2), "utf8");
+    console.log(`[eval] report written to ${options.out}`);
+    console.log("");
+  }
   const pct = (value: number): string => `${(value * 100).toFixed(1)}%`;
   console.log("");
   console.log("=== ANSWER BENCHMARK (live /api/chat) ===");
@@ -1225,8 +1263,13 @@ if (options.json) {
   console.log(`pass rate      : ${pct(overallPassRate)}`);
   console.log(`total cost     : $${totalCost.toFixed(6)}`);
   console.log(
-    `cost per question: $${report.costPerQuestionUsd.toFixed(6)}`,
+    `cost per question: $${report.costPerQuestionUsd.toFixed(6)} ` +
+      `(${cacheHitCount} cache hit(s) at $0, ${coldCount} cold)`,
   );
+  console.log(
+    `cost per COLD question: $${report.costPerColdAnswerUsd.toFixed(6)}`,
+  );
+  console.log(`spend ceiling  : $${options.maxSpendUsd.toFixed(2)}${budgetExhausted ? " (REACHED - run stopped)" : ""}`);
   console.log(
     `tokens         : ${totalHit} cache-hit + ${totalMiss} cache-miss + ${totalCompletion} completion`,
   );
