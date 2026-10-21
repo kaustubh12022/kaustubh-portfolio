@@ -24,7 +24,7 @@ highlights:
   - Exact subset-DP settlement for up to 15 players, with a greedy fallback.
   - Integer-paise arithmetic to avoid floating-point drift.
   - Live scoreboard over Supabase Realtime.
-  - 39 assertions covering the settlement engine.
+  - 44 assert() call sites covering the settlement engine.
 
 features:
   - title: Settlement engine
@@ -42,15 +42,15 @@ features:
     detail: >
       Installable mobile-first UI with offline caching for the shell and a compact
       score-entry flow.
-    evidence: "manifest.json; service-worker.js"
+    evidence: "manifest.json; sw.js"
 
 metrics:
   - label: Code lines
     value: "4.7k"
     note: "vanilla JS/HTML/CSS"
   - label: Test assertions
-    value: "39"
-    note: "settlement + helpers"
+    value: "44"
+    note: "44 assert() call sites (`grep -c \"assert(\" C54-Casino/test_suite.js`)"
   - label: Git commits
     value: "23"
     note: "Jun-Sep 2026"

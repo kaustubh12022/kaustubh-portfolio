@@ -64,7 +64,7 @@ export function buildDemoAnswer(
         text:
           "A visitor picks a property, dates, guests, and a package. The Express API checks blocked dates, capacity, and weekday/weekend pricing, then writes a booking. Owners and managers get role-scoped dashboards.\n\nIt is live, but I label it honestly: one Express monolith, three properties under one owner at audit time, and booking creation has no transaction or lock yet.",
         visual: { kind: "architecture", projectId: "pawna" },
-        evidence: ["backend/controllers/bookingController.js", "backend/middleware/auth.js"],
+        evidence: ["backend/controllers/bookingController.js", "backend/middleware/authMiddleware.js"],
         followUps: [
           "What would you fix in Pawna first?",
           "Is Pawna multi-tenant?",
@@ -75,7 +75,7 @@ export function buildDemoAnswer(
 
     return {
       text:
-        "Pawna is a multi-property booking platform for lake camping. Visitors check availability, configure guests and packages, and book. Owners and managers get role-scoped dashboards for properties, bookings, blocked dates, and revenue.\n\nThe engineering is real: weekday/weekend pricing, capacity overlap checks, JWT access, and Cloudinary media. The caveats are real too: no booking transaction, `plainPassword` is stored, and the live audit showed three properties under one owner — not the “5+ businesses” on my old resume.",
+        "Pawna is a multi-property booking platform for lake camping. Visitors check availability, configure guests and packages, and book. Owners and managers get role-scoped dashboards for properties, bookings, blocked dates, and revenue.\n\nThe engineering is real: weekday/weekend pricing, capacity overlap checks, JWT access, and Cloudinary media. The caveats are real too: no booking transaction, and the live audit showed three properties under one owner — not the “5+ businesses” on my old resume. An earlier version stored a plaintext shadow copy of the password. I found it during this audit and removed it; purge-plaintext-passwords.js scrubs existing rows.",
       visual: { kind: "project", projectId: "pawna" },
       evidence: ["backend/controllers/bookingController.js", "backend/models/User.js"],
       followUps: [
@@ -109,7 +109,7 @@ export function buildDemoAnswer(
 
     return {
       text:
-        "C54 is not a casino. It is a host-authoritative card-score tracker and settlement engine. The host enters rounds; guests see a live scoreboard over Supabase Realtime. At the end, the engine computes each player's net balance and finds the minimum transfers with exact subset DP for up to 15 players, using integer paise. It has 39 test assertions.\n\nThe repo currently contains hardcoded Supabase credentials, so I am rotating them before linking the live demo.",
+        "C54 is not a casino. It is a host-authoritative card-score tracker and settlement engine. The host enters rounds; guests see a live scoreboard over Supabase Realtime. At the end, the engine computes each player's net balance and finds the minimum transfers with exact subset DP for up to 15 players, using integer paise. It has 44 assert() call sites.\n\nThe repo currently contains hardcoded Supabase credentials, so I am rotating them before linking the live demo.",
       visual: { kind: "project", projectId: "c54" },
       evidence: ["app.js", "test_suite.js", "init_tables.js"],
       followUps: [

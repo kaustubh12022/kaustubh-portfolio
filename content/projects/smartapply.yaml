@@ -36,7 +36,7 @@ features:
       A regex/pandas filter removes out-of-scope roles before the model sees them.
       The first scoring call runs serially to warm the provider cache, then the rest
       fan out with asyncio.gather. Identical job descriptions hit jd_cache.
-    evidence: "src/scorer.py:549-559; src/ai_engine.py:38-56"
+    evidence: "src/scorer.py:549-559; src/ai_engine.py:59-74"
   - title: Structured scoring
     detail: >
       DeepSeek returns JSON that is validated before it touches the database.

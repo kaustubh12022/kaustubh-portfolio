@@ -29,7 +29,7 @@ features:
     detail: >
       Daily scores are stored locally and the app remains usable without a network.
       Firebase is optional for sync.
-    evidence: "app.js; firebase-config.js"
+    evidence: "js/app.js; js/firebase-config.js"
   - title: PWA shell
     detail: >
       Manifest and service worker make the app installable and cache the shell.

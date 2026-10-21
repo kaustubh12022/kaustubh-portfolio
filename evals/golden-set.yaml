@@ -1672,7 +1672,7 @@
   question: "How many test assertions are in the C54 test suite?"
   project: c54
   expect:
-    answerContains: [ "39" ]
+    answerContains: [ "44" ]
     answerNotContains: []
     evidence: []
     visualKind: metrics

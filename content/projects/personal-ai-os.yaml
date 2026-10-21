@@ -52,7 +52,7 @@ features:
     detail: >
       Supabase channels keep tasks, expenses, and dashboards in sync while the app
       is open.
-    evidence: "lib/core/supabase"
+    evidence: "lib/core/providers/supabase_provider.dart"
 
 metrics:
   - label: Code lines

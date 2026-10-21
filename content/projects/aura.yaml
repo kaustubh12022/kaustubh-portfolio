@@ -40,18 +40,18 @@ features:
     detail: >
       Gemini can call get_order_details and cancel_order. The tool results are
       returned into the live session so the spoken answer stays grounded.
-    evidence: "server/tools.js; server/geminiLiveRelay.js"
+    evidence: "server/orderDatabase.js; server/geminiLiveRelay.js"
   - title: Post-call summary
     detail: >
       After the call, the server produces a structured summary and falls back to a
       deterministic summary if the model call fails.
-    evidence: "server/summary.js"
+    evidence: "server/summarizer.js"
   - title: Test coverage
     detail: >
       Unit, integration, and E2E suites cover the audio path, tool calls, and UI.
       The repo has 129 test declarations; there is no coverage report backing a
       100% claim.
-    evidence: "tests/; playwright.config.js"
+    evidence: "tests/; vitest.config.js"
 
 metrics:
   - label: Code lines

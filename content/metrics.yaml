@@ -89,8 +89,8 @@
 - id: c54-tests
   project: c54
   label: Test assertions
-  value: "39"
-  method: Static count in test_suite.js.
+  value: "44"
+  method: 44 assert() call sites (`grep -c "assert(" C54-Casino/test_suite.js`).
   source: "C54-Casino/test_suite.js"
   verifiedAt: "2026-10-19"
 

@@ -116,9 +116,9 @@ This file is the machine-readable version of the portfolio. It is generated from
 **Features**
 
 - **Availability and pricing** — The booking controller checks blocked dates, guest capacity, and weekday/weekend rules, then computes the total from the selected package and guest count. (evidence: `backend/controllers/bookingController.js`)
-- **Role-scoped operations** — JWT middleware scopes owners and managers to their properties. Dashboards expose bookings, revenue, and commission views. (evidence: `backend/middleware/auth.js; backend/routes`)
-- **Property and media management** — Owners create properties, upload images through Cloudinary, and manage packages and blocked dates. (evidence: `backend/models/Property.js; backend/routes/properties.js`)
-- **PWA experience** — The React frontend ships a manifest, installable shell, and responsive booking flow; the API is deployed separately on Render. (evidence: `frontend/public/manifest.json; vercel.json; render.yaml`)
+- **Role-scoped operations** — JWT middleware scopes owners and managers to their properties. Dashboards expose bookings, revenue, and commission views. (evidence: `backend/middleware/authMiddleware.js; backend/routes`)
+- **Property and media management** — Owners create properties, upload images through Cloudinary, and manage packages and blocked dates. (evidence: `backend/models/Property.js; backend/routes/propertyRoutes.js`)
+- **PWA experience** — The React frontend ships a manifest, installable shell, and responsive booking flow; the API is deployed separately on Render. (evidence: `dist/manifest.webmanifest; vercel.json`)
 
 **Verified metrics**
 
@@ -129,7 +129,7 @@ This file is the machine-readable version of the portfolio. It is generated from
 **Caveats**
 
 - Booking creation has no database transaction or lock; simultaneous requests can race.
-- User.plainPassword is stored and returned by an owner endpoint; remove it.
+- An earlier version stored a plaintext shadow copy of the password. I found it during this audit and removed it; purge-plaintext-passwords.js scrubs existing rows.
 - The public properties endpoint leaks owner email; shape the response.
 - It is one Express monolith, not microservices.
 - Web-push exists but the owner subscription flow is incomplete.
@@ -157,7 +157,7 @@ This file is the machine-readable version of the portfolio. It is generated from
 
 - **Settlement engine** — The engine computes each player's net balance, then finds the minimum number of transfers using exact subset DP for small groups and a greedy pass for larger ones. All amounts are integer paise. (evidence: `app.js; test_suite.js`)
 - **Live session** — The host writes the session JSON; guests subscribe to the Supabase Realtime channel and see the scoreboard update. The host is the source of truth. (evidence: `app.js; init_tables.js`)
-- **PWA shell** — Installable mobile-first UI with offline caching for the shell and a compact score-entry flow. (evidence: `manifest.json; service-worker.js`)
+- **PWA shell** — Installable mobile-first UI with offline caching for the shell and a compact score-entry flow. (evidence: `manifest.json; sw.js`)
 
 **Verified metrics**
 
@@ -235,7 +235,7 @@ This file is the machine-readable version of the portfolio. It is generated from
 - **Intent routing** — The edge function first applies a regex fast-path for simple commands. If the request needs language understanding, it calls Gemini with a JSON intent contract and falls back to Groq if Gemini is unavailable. (evidence: `supabase/functions/chat/index.ts:92-614`)
 - **Chat-driven actions** — The returned intent and payload are validated, then executed against Postgres: create a task, log an expense, update a budget, or query a summary. (evidence: `supabase/functions/chat/index.ts`)
 - **Inline visual responses** — The Flutter chat renders markdown, charts, and tables so a spending or task answer is visual without leaving the conversation. (evidence: `lib/features/chat`)
-- **Realtime state** — Supabase channels keep tasks, expenses, and dashboards in sync while the app is open. (evidence: `lib/core/supabase`)
+- **Realtime state** — Supabase channels keep tasks, expenses, and dashboards in sync while the app is open. (evidence: `lib/core/providers/supabase_provider.dart`)
 
 **Verified metrics**
 
@@ -271,7 +271,7 @@ This file is the machine-readable version of the portfolio. It is generated from
 
 **Features**
 
-- **Offline-first state** — Daily scores are stored locally and the app remains usable without a network. Firebase is optional for sync. (evidence: `app.js; firebase-config.js`)
+- **Offline-first state** — Daily scores are stored locally and the app remains usable without a network. Firebase is optional for sync. (evidence: `js/app.js; js/firebase-config.js`)
 - **PWA shell** — Manifest and service worker make the app installable and cache the shell. (evidence: `manifest.json; sw.js`)
 
 **Verified metrics**
@@ -430,8 +430,8 @@ Every claim the earlier resume made, the status the source-code audit gave it, a
 - **Old claim:** "CampFlow: Hospitality Automation & Booking Suite."
 - **Status:** contradicted
 - **Approved wording:** The project is "Lonavala Stays" — a multi-property camping and villa booking platform built with React, Express and MongoDB, deployed on Vercel and Render. "CampFlow" was a name I used on the resume that never made it into the code.
-- **Evidence:** The string "CampFlow" does not appear anywhere in either copy of the repository. The app brands itself "Lonavala Stays" (vite.config.js:26-27 sets name: 'Lonavala Stays', short_name: 'Lonavala'). It is a multi-property camping and villa booking platform: React 19.2 + Vite 7 + Tailwind CSS v4 frontend on Vercel, Express 5 + Mongoose 9 API on Render, 8 Mongoose models, JWT role-scoped access. The 58 MB Flutter mobile app exists only as an untracked local copy in Projects\Pawna Camping and is not part of the public repo.
-- **Source:** `Pawna-camping/vite.config.js:26-27; Pawna-camping/backend/models; Pawna-camping/package.json`
+- **Evidence:** The string "CampFlow" does not appear anywhere in either copy of the repository. The app brands itself "Lonavala Stays" (vite.config.js:22-23 sets name: 'Lonavala Stays', short_name: 'Lonavala'). It is a multi-property camping and villa booking platform: React 19.2 + Vite 7 + Tailwind CSS v4 frontend on Vercel, Express 5 + Mongoose 9 API on Render, 8 Mongoose models, JWT role-scoped access. The 58 MB Flutter mobile app exists only as an untracked local copy in Projects\Pawna Camping and is not part of the public repo.
+- **Source:** `Pawna-camping/vite.config.js:22-23; Pawna-camping/backend/models; Pawna-camping/package.json`
 
 ### Partially supported — use the approved wording
 
@@ -441,7 +441,7 @@ Every claim the earlier resume made, the status the source-code audit gave it, a
 - **Status:** partial
 - **Approved wording:** A role-scoped, multi-property booking platform.
 - **Evidence:** Owner-scoped RBAC exists in one shared MongoDB database. There is no tenant isolation, per-tenant branding, or self-serve onboarding.
-- **Source:** `Pawna-camping/backend/middleware/auth.js; controllers`
+- **Source:** `Pawna-camping/backend/middleware/authMiddleware.js; controllers`
 
 #### CampFlow dashboards and notifications (`campflow-realtime-push`)
 
@@ -449,7 +449,7 @@ Every claim the earlier resume made, the status the source-code audit gave it, a
 - **Status:** partial
 - **Approved wording:** Analytics dashboards and a PWA shell; push notifications are partial.
 - **Evidence:** Dashboards use Recharts and request/response APIs, not realtime push. Web-push code exists, but the owner subscription flow is incomplete.
-- **Source:** `Pawna-camping/frontend/src; backend/routes/push.js`
+- **Source:** `Pawna-camping/src; backend/routes/notificationRoutes.js`
 
 #### MCP integration (`mcp`)
 
@@ -472,7 +472,7 @@ Every claim the earlier resume made, the status the source-code audit gave it, a
 - **Old claim:** "Production-ready."
 - **Status:** partial
 - **Approved wording:** "A working production deployment with known hardening work: booking transactions, password field removal, and response shaping."
-- **Evidence:** Booking creation has no transaction/lock; User.plainPassword is stored and returned by an owner endpoint; the public properties endpoint leaks owner email.
+- **Evidence:** Booking creation has no transaction/lock. An earlier version stored a plaintext shadow copy of the password. I found it during this audit and removed it; purge-plaintext-passwords.js scrubs existing rows. The public properties endpoint leaks owner email.
 - **Source:** `Pawna-camping/backend/controllers/bookingController.js; models/User.js`
 
 ### Unverified — do not present as measured results

@@ -741,7 +741,7 @@
     goldenId: q085
   assert:
     - type: icontains
-      value: "39"
+      value: "44"
 - description: q086 metrics
   vars:
     question: What is the code size of the DayScore project?

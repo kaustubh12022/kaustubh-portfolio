@@ -42,17 +42,17 @@ features:
     detail: >
       JWT middleware scopes owners and managers to their properties. Dashboards
       expose bookings, revenue, and commission views.
-    evidence: "backend/middleware/auth.js; backend/routes"
+    evidence: "backend/middleware/authMiddleware.js; backend/routes"
   - title: Property and media management
     detail: >
       Owners create properties, upload images through Cloudinary, and manage
       packages and blocked dates.
-    evidence: "backend/models/Property.js; backend/routes/properties.js"
+    evidence: "backend/models/Property.js; backend/routes/propertyRoutes.js"
   - title: PWA experience
     detail: >
       The React frontend ships a manifest, installable shell, and responsive
       booking flow; the API is deployed separately on Render.
-    evidence: "frontend/public/manifest.json; vercel.json; render.yaml"
+    evidence: "dist/manifest.webmanifest; vercel.json"
 
 metrics:
   - label: Code lines
@@ -67,7 +67,7 @@ metrics:
 
 caveats:
   - "Booking creation has no database transaction or lock; simultaneous requests can race."
-  - "User.plainPassword is stored and returned by an owner endpoint; remove it."
+  - "An earlier version stored a plaintext shadow copy of the password. I found it during this audit and removed it; purge-plaintext-passwords.js scrubs existing rows."
   - "The public properties endpoint leaks owner email; shape the response."
   - "It is one Express monolith, not microservices."
   - "Web-push exists but the owner subscription flow is incomplete."
