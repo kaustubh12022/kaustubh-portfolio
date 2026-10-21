@@ -1,0 +1,2986 @@
+{
+  "generatedAt": "2026-10-21T13:05:28.507Z",
+  "url": "http://localhost:3000/api/chat",
+  "count": 20,
+  "overallPassRate": 0.65,
+  "totalCostUsd": 0.02311146,
+  "costPerQuestionUsd": 0.001155573,
+  "cacheHitAnswers": 0,
+  "coldAnswers": 20,
+  "costPerColdAnswerUsd": 0.001155573,
+  "maxSpendUsd": 0.15,
+  "budgetExhausted": false,
+  "resumedFromPreviousRun": 0,
+  "tokens": {
+    "cacheHit": 205824,
+    "cacheMiss": 96324,
+    "completion": 13409
+  },
+  "recomputedCostUsd": 0.023111472,
+  "byBucket": {
+    "code_explanation": {
+      "total": 8,
+      "passed": 5,
+      "passRate": 0.625
+    },
+    "claim_correction": {
+      "total": 12,
+      "passed": 8,
+      "passRate": 0.6666666666666666
+    }
+  },
+  "passRateExcludingVisual": 0.7,
+  "checkTally": {
+    "answerContains": {
+      "failed": 2,
+      "total": 20
+    },
+    "answerNotContains": {
+      "failed": 1,
+      "total": 20
+    },
+    "evidence": {
+      "failed": 3,
+      "total": 8
+    },
+    "confidence": {
+      "failed": 0,
+      "total": 20
+    },
+    "visualKind": {
+      "failed": 3,
+      "total": 12
+    },
+    "claim:java-spring": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:java-spring": {
+      "failed": 0,
+      "total": 1
+    },
+    "claim:medflow": {
+      "failed": 0,
+      "total": 2
+    },
+    "claimVisual:medflow": {
+      "failed": 0,
+      "total": 2
+    },
+    "claim:c54-socketio": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:c54-socketio": {
+      "failed": 0,
+      "total": 1
+    },
+    "claim:smartapply-weasyprint": {
+      "failed": 1,
+      "total": 2
+    },
+    "claimVisual:smartapply-weasyprint": {
+      "failed": 2,
+      "total": 2
+    },
+    "claim:campflow-owners": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:campflow-owners": {
+      "failed": 0,
+      "total": 1
+    },
+    "claim:pawna-name": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:pawna-name": {
+      "failed": 0,
+      "total": 1
+    },
+    "claim:campflow-multitenant": {
+      "failed": 1,
+      "total": 1
+    },
+    "claimVisual:campflow-multitenant": {
+      "failed": 1,
+      "total": 1
+    },
+    "claim:campflow-microservices": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:campflow-microservices": {
+      "failed": 0,
+      "total": 1
+    },
+    "claim:campflow-realtime-push": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:campflow-realtime-push": {
+      "failed": 0,
+      "total": 1
+    },
+    "claim:personal-ai-os-stack": {
+      "failed": 0,
+      "total": 1
+    },
+    "claimVisual:personal-ai-os-stack": {
+      "failed": 0,
+      "total": 1
+    }
+  },
+  "confidenceTally": {
+    "high": 12,
+    "medium": 7,
+    "low": 1
+  },
+  "toolUsage": {
+    "find_symbol": 5,
+    "search_code": 18,
+    "render_visual": 20,
+    "get_claim": 23,
+    "get_project": 13,
+    "read_file": 3,
+    "get_profile": 1
+  },
+  "evidenceBreakdown": {
+    "failed": 3,
+    "rightFileWrongChunk": 3,
+    "wrongFile": 0,
+    "noCitationAtAll": 0
+  },
+  "worst": [
+    {
+      "id": "q005",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply make sure the tailored resume never invents a skill?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": false,
+          "detail": "no citation for: src/resume_tailor.py:224-277"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "The guardrail is deterministic Python, not prompt trust. The LLM returns a delta JSON, and `validate_and_sanitize_tailored()` in `src/resume_tailor.py` re-checks every skill against the master resume before merging.\n\nThe mechanism, as implemented: each skill from the model's output passes through `is_valid_candidate_skill()`; anything that fails is dropped and logged as a pruned hallucinated skill. Duplicates collapse, and immutable sections (personal info, education, certifications, achievements, employer and dates) are overwritten from the master resume instead of being accepted from the model. The module docstring states the intent plainly: `validate_and_sanitize_tailored() guarantees 100% truthfulness to plain_text_resume.yaml (0 hallucinations, locked immutables, 3 projects retained with role-weighted ranking, and auto-injection of applicable candidate skills M ∩ J for >= 95% coverage)`.\n\nThe tests exercise it adversarially. `test_f8_5_anti_hallucination_sanitization` injects \"Kubernetes Cluster Administrator\" and \"COBOL Mainframe\" into a master copy and asserts the validator rejects them with those names in the violations list.\n\nCaveat: the docstring's \"0 hallucinations\" and \"100% truthfulness\" are the code author's wording (documented), not an independently measured metric; I found no recorded metric for hallucination rate.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 542,
+          "endLine": 565
+        },
+        "evidence": [
+          {
+            "label": "src/resume_tailor.py:542-565",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 542,
+            "endLine": 565,
+            "symbol": "validate_and_sanitize_tailored"
+          },
+          {
+            "label": "src/resume_tailor.py:463-542",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 463,
+            "endLine": 542,
+            "symbol": "validate_and_sanitize_tailored"
+          },
+          {
+            "label": "tests/e2e/test_tier1_feature_coverage.py:624-630",
+            "projectId": "smartapply",
+            "path": "tests/e2e/test_tier1_feature_coverage.py",
+            "startLine": 624,
+            "endLine": 630,
+            "symbol": "test_f8_5_anti_hallucination_sanitization"
+          }
+        ],
+        "followUps": [
+          "How does is_valid_candidate_skill work?",
+          "What is the M ∩ J skill injection rule?",
+          "What does SmartApply cost to run?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "\"0 hallucinations\" and \"100% truthfulness\" are the code author's docstring wording, not a measured metric.",
+          "Experience bullets are re-ordered and rewritten by the model; only sections and skills are hard-locked.",
+          "1 citation point at source lines that were not opened in this answer; they resolve in the index, but the assistant did not read them."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/resume_tailor.py:542-565",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 542,
+          "endLine": 565,
+          "symbol": "validate_and_sanitize_tailored"
+        },
+        {
+          "label": "src/resume_tailor.py:463-542",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 463,
+          "endLine": 542,
+          "symbol": "validate_and_sanitize_tailored"
+        },
+        {
+          "label": "tests/e2e/test_tier1_feature_coverage.py:624-630",
+          "projectId": "smartapply",
+          "path": "tests/e2e/test_tier1_feature_coverage.py",
+          "startLine": 624,
+          "endLine": 630,
+          "symbol": "test_f8_5_anti_hallucination_sanitization"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 9325,
+      "toolCalls": [
+        "search_code",
+        "get_claim",
+        "read_file",
+        "render_visual"
+      ],
+      "costUsd": 0.00158162,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 6776,
+      "completionTokens": 887,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q006",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply pick which projects to put on a tailored resume?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": false,
+          "detail": "no citation for: src/resume_tailor.py:326-404"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "SmartApply ranks projects by a role \"lens\", not by free-form LLM choice. `detect_role_lens(job)` classifies the job, then `validate_and_sanitize_tailored` re-orders the verified master projects for that lens and enforces the budget. The prompt asks the model to pick 3 of 5 master projects \"that best align with the Target Role Lens\" and re-order them by relevance (`tailoring_prompt.txt` 31-70), but the Python side is the guardrail: `_match_project_key` maps each returned project name to a canonical key, unknown names are pruned, and the output is 3 projects with 3/2/2 bullets. A test documents the weighting: fullstack puts CampFlow first, while QA, Java and DotNet put SmartApply first. The code doesn't state why those specific weights were chosen — Inference: each lens foregrounds the project with matching stack surface. Caveat: the \"5 Master Projects\" in the prompt and the \"3 verified\" projects in the tests disagree.",
+      "visual": {
+        "visual": {
+          "kind": "architecture",
+          "projectId": "smartapply"
+        },
+        "evidence": [
+          {
+            "label": "src/resume_tailor.py:445-460",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 445,
+            "endLine": 460,
+            "symbol": "_match_project_key"
+          },
+          {
+            "label": "src/prompts/tailoring_prompt.txt:31-70",
+            "projectId": "smartapply",
+            "path": "src/prompts/tailoring_prompt.txt",
+            "startLine": 31,
+            "endLine": 70
+          },
+          {
+            "label": "tests/test_m4_tailoring_guardrails.py:386-398",
+            "projectId": "smartapply",
+            "path": "tests/test_m4_tailoring_guardrails.py",
+            "startLine": 386,
+            "endLine": 398,
+            "symbol": "test_m4_project_role_weighted_reordering"
+          }
+        ],
+        "followUps": [
+          "What are the role lenses and their project ranking?",
+          "How are fabricated projects pruned?",
+          "Why 3/2/2 bullet budgeting?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "The prompt names 5 master projects; the guardrail tests expect 3 verified ones.",
+          "The ranking weights per lens are visible in tests, not in a documented rationale."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/resume_tailor.py:445-460",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 445,
+          "endLine": 460,
+          "symbol": "_match_project_key"
+        },
+        {
+          "label": "src/prompts/tailoring_prompt.txt:31-70",
+          "projectId": "smartapply",
+          "path": "src/prompts/tailoring_prompt.txt",
+          "startLine": 31,
+          "endLine": 70
+        },
+        {
+          "label": "tests/test_m4_tailoring_guardrails.py:386-398",
+          "projectId": "smartapply",
+          "path": "tests/test_m4_tailoring_guardrails.py",
+          "startLine": 386,
+          "endLine": 398,
+          "symbol": "test_m4_project_role_weighted_reordering"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 10804,
+      "toolCalls": [
+        "search_code",
+        "get_project",
+        "find_symbol",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00292089,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 16219,
+      "completionTokens": 759,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q092",
+      "bucket": "claim_correction",
+      "question": "Tell me about MedFlow, the Spring Boot healthcare service with JWT RBAC and 40% faster reports.",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": false,
+          "detail": "present: pom.xml"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:medflow",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:medflow",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "That claim is not supported. There is no MedFlow Spring Boot project in the audited folders.\n\nThe approved wording: \"There is no MedFlow Spring Boot project. I do not present the Node hospital prototype as MedFlow or as HIPAA-compliant.\"\n\nWhat the evidence shows: the hospital-management-system repo is Node/Express/MongoDB, backend-only, with no reports module and no benchmarks — so the 40% report-throughput figure has no measurement behind it. There are also no HIPAA controls in it.\n\nThe Spring Boot claim is separately contradicted: across the audited folders there is no pom.xml, no Spring Boot application and no MySQL project. The only .java files are DSA solutions and Flutter-generated files. Approved wording: \"I use Java for DSA and used it in my internship. I do not currently have a public Spring Boot project; that is a gap I am addressing.\"\n\nIf you want a verified build to discuss, C54 is a live engine with 39 test assertions.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "medflow",
+            "java-spring"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "What is C54 and how does its settlement engine work?",
+          "Which projects are actually indexed in the source index?",
+          "What verified metrics do you have?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "The 40% report speedup is unverified: no benchmarks exist in the repo.",
+          "No Spring Boot or MySQL project was found in the audited folders."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 4149,
+      "toolCalls": [
+        "get_claim",
+        "get_claim",
+        "get_claim",
+        "get_project",
+        "render_visual"
+      ],
+      "costUsd": 0.00064479,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 2001,
+      "completionTokens": 520,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q001",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply decide which job postings are worth sending to the LLM?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": false,
+          "detail": "missing: regex"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 1 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": false,
+          "detail": "no citation for: src/scorer.py:159-210"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "SmartApply gates postings without spending tokens. `is_relevant_jd` in `src/scorer.py` does a zero-token keyword check: it rejects any JD or title matching `OUT_OF_SCOPE_STACK_PATTERN`, then requires at least one `DOMAIN_ANCHORS` match and at least one `TECH_TOOLS` match in the lowercased description. Its docstring states the intent: \"Prevents wasting AI tokens on completely irrelevant or out-of-scope roles.\"\n\nOnly survivors reach `process_job` and DeepSeek. The first call runs serially to warm the provider prompt cache; the rest fan out with `asyncio.gather`. Results are sorted by score, then filtered against `scoring.minimum_score` (default 60), and a summary logs how many were skipped as irrelevant. The test `test_scorer_relevance_filtering` asserts an Accountant posting is skipped entirely, leaving 2 of 3.\n\nPer the project record, one recorded batch of 3,360 raw postings yielded 1,032 scored after filtering. The code shows the filter; it does not state why these specific keyword lists were chosen. Inference: they encode the target entry-level Java/automation market.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 136,
+          "endLine": 155
+        },
+        "evidence": [
+          {
+            "label": "src/scorer.py:136-155",
+            "projectId": "smartapply",
+            "path": "src/scorer.py",
+            "startLine": 136,
+            "endLine": 155,
+            "symbol": "is_relevant_jd"
+          },
+          {
+            "label": "src/scorer.py:540-566",
+            "projectId": "smartapply",
+            "path": "src/scorer.py",
+            "startLine": 540,
+            "endLine": 566,
+            "symbol": "score_jobs"
+          },
+          {
+            "label": "tests/test_components.py:16-33",
+            "projectId": "smartapply",
+            "path": "tests/test_components.py",
+            "startLine": 16,
+            "endLine": 33,
+            "symbol": "test_scorer_relevance_filtering"
+          }
+        ],
+        "followUps": [
+          "What does the minimum_score threshold filter out?",
+          "Why does the first scoring call run serially?",
+          "How does the JD cache avoid repeat scoring calls?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "3,360 to 1,032 is one recorded batch, not a general rate.",
+          "Why the keyword lists were chosen is not documented in the code."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/scorer.py:136-155",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 136,
+          "endLine": 155,
+          "symbol": "is_relevant_jd"
+        },
+        {
+          "label": "src/scorer.py:540-566",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 540,
+          "endLine": 566,
+          "symbol": "score_jobs"
+        },
+        {
+          "label": "tests/test_components.py:16-33",
+          "projectId": "smartapply",
+          "path": "tests/test_components.py",
+          "startLine": 16,
+          "endLine": 33,
+          "symbol": "test_scorer_relevance_filtering"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 11138,
+      "toolCalls": [
+        "search_code",
+        "get_project",
+        "find_symbol",
+        "read_file",
+        "render_visual"
+      ],
+      "costUsd": 0.00170882,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 7816,
+      "completionTokens": 839,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q095",
+      "bucket": "claim_correction",
+      "question": "Does SmartApply render the resume PDF with WeasyPrint?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 3 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": false,
+          "detail": "expected claims, got code"
+        },
+        {
+          "name": "claim:smartapply-weasyprint",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:smartapply-weasyprint",
+          "ok": false,
+          "detail": "the claims visual declares null"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "That claim is not supported. The repo does not use WeasyPrint, and it is not imported anywhere in the indexed code. The pipeline renders ATS-oriented PDFs with Jinja2 + Playwright.\n\nMechanism: `generate_resume_pdf` in `src/pdf_generator.py` loads `resume_template.html` through a Jinja2 `Environment`, renders it with the tailored resume dict plus the job, then launches headless Chromium via Playwright, calls `page.set_content(html_out)` and `page.pdf(...)` with A4 format, `print_background=True` and zero margins. Afterwards it runs an ATS audit from `ats_verifier.audit_resume_pdf`, and a failure there is logged rather than raised. The test suite (`tests/test_m5_ats_pdf.py`, `tests/test_interactive_review_abort.py`) asserts a one-page PDF via pypdf after the same Playwright path.\n\nCaveat: the audit call is wrapped in a try/except and returns an empty string on render error.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 94,
+          "endLine": 139
+        },
+        "evidence": [
+          {
+            "label": "src/pdf_generator.py:94-139",
+            "projectId": "smartapply",
+            "path": "src/pdf_generator.py",
+            "startLine": 94,
+            "endLine": 139,
+            "symbol": "generate_resume_pdf"
+          },
+          {
+            "label": "tests/test_m5_ats_pdf.py:1-20",
+            "projectId": "smartapply",
+            "path": "tests/test_m5_ats_pdf.py",
+            "startLine": 1,
+            "endLine": 20
+          },
+          {
+            "label": "tests/test_interactive_review_abort.py:726-745",
+            "projectId": "smartapply",
+            "path": "tests/test_interactive_review_abort.py",
+            "startLine": 726,
+            "endLine": 745,
+            "symbol": "test_resume_template_strictly_one_page"
+          }
+        ],
+        "followUps": [
+          "How is the one-page ATS constraint enforced?",
+          "What does the ATS audit actually check?",
+          "Where is the resume HTML template built?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "No WeasyPrint import appears in the indexed code; the renderer is Jinja2 + Playwright Chromium.",
+          "The ATS audit failure is logged, not raised."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/pdf_generator.py:94-139",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 94,
+          "endLine": 139,
+          "symbol": "generate_resume_pdf"
+        },
+        {
+          "label": "tests/test_m5_ats_pdf.py:1-20",
+          "projectId": "smartapply",
+          "path": "tests/test_m5_ats_pdf.py",
+          "startLine": 1,
+          "endLine": 20
+        },
+        {
+          "label": "tests/test_interactive_review_abort.py:726-745",
+          "projectId": "smartapply",
+          "path": "tests/test_interactive_review_abort.py",
+          "startLine": 726,
+          "endLine": 745,
+          "symbol": "test_resume_template_strictly_one_page"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 7393,
+      "toolCalls": [
+        "get_claim",
+        "search_code",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00110619,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 4385,
+      "completionTokens": 693,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q096",
+      "bucket": "claim_correction",
+      "question": "Which template engine and renderer actually produce the ATS PDF in SmartApply?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 2 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 2 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": false,
+          "detail": "expected claims, got flow"
+        },
+        {
+          "name": "claim:smartapply-weasyprint",
+          "ok": false,
+          "detail": "the approved public wording is NOT reproduced: \"The pipeline renders ATS-oriented PDFs with Jinja2 + Playwright.\""
+        },
+        {
+          "name": "claimVisual:smartapply-weasyprint",
+          "ok": false,
+          "detail": "the claims visual declares null"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "**Jinja2 renders the HTML; Playwright's headless Chromium prints it to PDF.** WeasyPrint is not used.\n\nThe mechanism, from `src/pdf_generator.py`: a Jinja2 `Environment` with a `FileSystemLoader` pointed at the repo's `templates/` directory loads `resume_template.html`, and `template.render(resume=tailored_resume, job=job)` produces the HTML string (lines 94-139). That HTML is then pushed into a Chromium page with `page.set_content(html_out)` and written with `page.pdf(..., format=\"A4\", print_background=True)`, zero margins, margins handled in CSS. There are two entry points: `generate_pdf` reuses a shared Playwright `Page`, and `generate_resume_pdf` launches its own `sync_playwright()` Chromium session for standalone runs.\n\nAfter the write, `generate_resume_pdf` calls `audit_resume_pdf` from `ats_verifier` and logs violations. Tests in `tests/test_m5_ats_pdf.py` check the template for the six standard uppercase ATS headings and assert the output is strictly one page via pypdf.\n\nCaveat: the verifier's own check list I only saw indirectly through the test file, not the verifier source.",
+      "visual": {
+        "visual": {
+          "kind": "flow",
+          "projectId": "smartapply"
+        },
+        "evidence": [
+          {
+            "label": "src/pdf_generator.py:94-139",
+            "projectId": "smartapply",
+            "path": "src/pdf_generator.py",
+            "startLine": 94,
+            "endLine": 139,
+            "symbol": "generate_resume_pdf"
+          },
+          {
+            "label": "src/pdf_generator.py:10-89",
+            "projectId": "smartapply",
+            "path": "src/pdf_generator.py",
+            "startLine": 10,
+            "endLine": 89,
+            "symbol": "generate_pdf"
+          },
+          {
+            "label": "tests/test_m5_ats_pdf.py:91-105",
+            "projectId": "smartapply",
+            "path": "tests/test_m5_ats_pdf.py",
+            "startLine": 91,
+            "endLine": 105,
+            "symbol": "test_template_ats_headings"
+          }
+        ],
+        "followUps": [
+          "Why not WeasyPrint for the resume PDF?",
+          "What does the ATS verifier actually check?",
+          "How is the resume template kept to one page?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "ats_verifier.py source was not read directly; its checks are known only via the test file."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/pdf_generator.py:94-139",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 94,
+          "endLine": 139,
+          "symbol": "generate_resume_pdf"
+        },
+        {
+          "label": "src/pdf_generator.py:10-89",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 10,
+          "endLine": 89,
+          "symbol": "generate_pdf"
+        },
+        {
+          "label": "tests/test_m5_ats_pdf.py:91-105",
+          "projectId": "smartapply",
+          "path": "tests/test_m5_ats_pdf.py",
+          "startLine": 91,
+          "endLine": 105,
+          "symbol": "test_template_ats_headings"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 6435,
+      "toolCalls": [
+        "get_project",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00109586,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 4395,
+      "completionTokens": 688,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q099",
+      "bucket": "claim_correction",
+      "question": "Is CampFlow a multi-tenant portal with tenant isolation and self-serve onboarding?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": false,
+          "detail": "missing: multi-property"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": false,
+          "detail": "expected claims, got code"
+        },
+        {
+          "name": "claim:campflow-multitenant",
+          "ok": false,
+          "detail": "the approved public wording is NOT reproduced: \"A role-scoped, multi-property booking platform.\""
+        },
+        {
+          "name": "claimVisual:campflow-multitenant",
+          "ok": false,
+          "detail": "the claims visual declares null"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "I'll check the content layer and the source index for CampFlow.**No project called CampFlow exists in either layer.** The portfolio's project list is smartapply, pawna, c54, aura, personal-ai-os, dayscore and copilot. So there is no evidence of a \"CampFlow\" multi-tenant portal with tenant isolation and self-serve onboarding.\n\nThe nearest match is **Pawna** (Pawna-camping), a camping booking backend, and it does implement tenant scoping — just not under that name. In `backend/controllers/packageController.js`, `updatePackage` (lines 111-163) and `deletePackage` (lines 172-196) enforce a \"Multi-tenant authorization\" check: an `owner` may only modify or delete packages tied to a property in their own `req.user.properties` list, and the update path also verifies ownership of any destination property (`[PACKAGE NOT FOUND]` / `Access denied: you do not own the property for this package.`).\n\nWhat I did not verify: a self-serve onboarding flow, org-level provisioning or row-level isolation guarantees. I didn't find onboarding code in these results, so I can't assert it exists.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 172,
+          "endLine": 196
+        },
+        "evidence": [
+          {
+            "label": "backend/controllers/packageController.js:172-196",
+            "projectId": "pawna",
+            "path": "backend/controllers/packageController.js",
+            "startLine": 172,
+            "endLine": 196,
+            "symbol": "deletePackage"
+          },
+          {
+            "label": "backend/controllers/packageController.js:111-163",
+            "projectId": "pawna",
+            "path": "backend/controllers/packageController.js",
+            "startLine": 111,
+            "endLine": 163,
+            "symbol": "updatePackage"
+          }
+        ],
+        "followUps": [
+          "How does Pawna decide which properties an owner owns?",
+          "Show the Pawna data model for properties and packages",
+          "Which projects have a self-serve onboarding flow?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "No project named CampFlow exists in the content layer or the source index.",
+          "Self-serve onboarding was not found in the code I read."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "backend/controllers/packageController.js:172-196",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 172,
+          "endLine": 196,
+          "symbol": "deletePackage"
+        },
+        {
+          "label": "backend/controllers/packageController.js:111-163",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 111,
+          "endLine": 163,
+          "symbol": "updatePackage"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 6069,
+      "toolCalls": [
+        "get_project",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00104531,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 4258,
+      "completionTokens": 638,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    }
+  ],
+  "results": [
+    {
+      "id": "q003",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply compute the DeepSeek cost of a scoring call?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 2 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": true,
+          "detail": "all 1 citation(s) matched"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "SmartApply prices a call with `calculate_deepseek_cost(model, cached_tokens, miss_tokens, completion_tokens)` in `src/ai_engine.py`, lines 59–74. It splits the prompt into cache hits and cache misses, bills each tier separately, adds output tokens, and rounds to 8 decimals.\n\nDocumented rates in the docstring: deepseek-chat is $0.07 / 1M cached hits, $0.27 / 1M misses, $1.10 / 1M output; deepseek-reasoner is $0.14, $0.55 and $2.19 / 1M. Model routing is by substring: if `model` contains \"reasoner\" or \"r1\" (case-insensitive) it uses `DEEPSEEK_PRICING[\"reasoner\"]`, otherwise `[\"chat\"]`. So:\n\ncost = cached/1e6 × hit_rate + miss/1e6 × miss_rate + completion/1e6 × out_rate\n\nThe tests pin the intent: `tests/test_ai_engine_multiprovider.py` lines 33–41 asserts 1M of each token type costs $1.44 for chat and $2.88 for reasoner. Caveat: this function prices a call from counts that must already be supplied — where cached vs miss token counts are extracted from the response is not in the chunks I read, and the `\"r1\"` match would also catch any model name containing that substring.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/ai_engine.py",
+          "startLine": 59,
+          "endLine": 74
+        },
+        "evidence": [
+          {
+            "label": "src/ai_engine.py:59-74",
+            "projectId": "smartapply",
+            "path": "src/ai_engine.py",
+            "startLine": 59,
+            "endLine": 74,
+            "symbol": "calculate_deepseek_cost"
+          },
+          {
+            "label": "tests/test_ai_engine_multiprovider.py:33-41",
+            "projectId": "smartapply",
+            "path": "tests/test_ai_engine_multiprovider.py",
+            "startLine": 33,
+            "endLine": 41,
+            "symbol": "test_deepseek_cost_calculation"
+          }
+        ],
+        "followUps": [
+          "Where do cached_tokens and miss_tokens get extracted?",
+          "What cost reduction does the caching actually deliver?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "Token-count extraction from the API response was not read; only the pricing function is verified."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/ai_engine.py:59-74",
+          "projectId": "smartapply",
+          "path": "src/ai_engine.py",
+          "startLine": 59,
+          "endLine": 74,
+          "symbol": "calculate_deepseek_cost"
+        },
+        {
+          "label": "tests/test_ai_engine_multiprovider.py:33-41",
+          "projectId": "smartapply",
+          "path": "tests/test_ai_engine_multiprovider.py",
+          "startLine": 33,
+          "endLine": 41,
+          "symbol": "test_deepseek_cost_calculation"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 8582,
+      "toolCalls": [
+        "find_symbol",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00088556,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 2853,
+      "completionTokens": 723,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q002",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply strip HR boilerplate out of a job description before it costs tokens?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": true,
+          "detail": "all 1 citation(s) matched"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "I'll check the claim ledger and the source index.`strip_boilerplate` in `src/scorer.py` (lines 122-133) runs before any LLM call. It loops over `BOILERPLATE_PATTERNS` (defined at `src/scorer.py:46-53`) and applies `re.sub` with `re.DOTALL` for each. The six case-insensitive patterns target sections headed About Us / company overview, benefits / perks / what we offer / compensation, equal opportunity / diversity / EEO, disclaimer / note, and life at / why join us / our culture / covid. Each match is anchored at a line start and runs until the next capitalised line or, for the EEO and disclaimer patterns, until a section header like Requirements, Responsibilities or Qualifications. Afterwards it collapses runs of three or more newlines to two and strips whitespace.\n\nThe guardrail is the last line: if the cleaned text is empty it returns the original description, so a boilerplate-only posting never reaches scoring as a blank prompt. The docstring states the purpose as reducing token cost; the code doesn't state why these specific patterns were chosen beyond the intent stated in the docstring.\n\nSavings are unverified. The ledger rejects the 80% figure: the filter cut scoring calls 69% (3,360 raw postings to 1,032 scored), and prefix caching gave 62.57% token-cost savings at a 99.77% cache-hit rate.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 122,
+          "endLine": 133
+        },
+        "evidence": [
+          {
+            "label": "src/scorer.py:122-133",
+            "projectId": "smartapply",
+            "path": "src/scorer.py",
+            "startLine": 122,
+            "endLine": 133,
+            "symbol": "strip_boilerplate"
+          },
+          {
+            "label": "src/scorer.py:46-53",
+            "projectId": "smartapply",
+            "path": "src/scorer.py",
+            "startLine": 46,
+            "endLine": 53,
+            "symbol": "BOILERPLATE_PATTERNS"
+          },
+          {
+            "label": "tests/test_m4_tailoring_guardrails.py:127-170",
+            "projectId": "smartapply",
+            "path": "tests/test_m4_tailoring_guardrails.py",
+            "startLine": 127,
+            "endLine": 170,
+            "symbol": "test_m4_strip_boilerplate_token_reduction"
+          }
+        ],
+        "followUps": [
+          "What happens when stripping removes everything?",
+          "How does the keyword filter cut calls before scoring?",
+          "Does the ledger support the 80% cost number?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "Test asserts >=50% length reduction on one noisy JD, not a measured token-cost saving.",
+          "The 80% reduction claim is unverified; verified numbers are 69% fewer calls and 62.57% token savings."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/scorer.py:122-133",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 122,
+          "endLine": 133,
+          "symbol": "strip_boilerplate"
+        },
+        {
+          "label": "src/scorer.py:46-53",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 46,
+          "endLine": 53,
+          "symbol": "BOILERPLATE_PATTERNS"
+        },
+        {
+          "label": "tests/test_m4_tailoring_guardrails.py:127-170",
+          "projectId": "smartapply",
+          "path": "tests/test_m4_tailoring_guardrails.py",
+          "startLine": 127,
+          "endLine": 170,
+          "symbol": "test_m4_strip_boilerplate_token_reduction"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 9601,
+      "toolCalls": [
+        "get_claim",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00106661,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 3820,
+      "completionTokens": 783,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q001",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply decide which job postings are worth sending to the LLM?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": false,
+          "detail": "missing: regex"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 1 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": false,
+          "detail": "no citation for: src/scorer.py:159-210"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "SmartApply gates postings without spending tokens. `is_relevant_jd` in `src/scorer.py` does a zero-token keyword check: it rejects any JD or title matching `OUT_OF_SCOPE_STACK_PATTERN`, then requires at least one `DOMAIN_ANCHORS` match and at least one `TECH_TOOLS` match in the lowercased description. Its docstring states the intent: \"Prevents wasting AI tokens on completely irrelevant or out-of-scope roles.\"\n\nOnly survivors reach `process_job` and DeepSeek. The first call runs serially to warm the provider prompt cache; the rest fan out with `asyncio.gather`. Results are sorted by score, then filtered against `scoring.minimum_score` (default 60), and a summary logs how many were skipped as irrelevant. The test `test_scorer_relevance_filtering` asserts an Accountant posting is skipped entirely, leaving 2 of 3.\n\nPer the project record, one recorded batch of 3,360 raw postings yielded 1,032 scored after filtering. The code shows the filter; it does not state why these specific keyword lists were chosen. Inference: they encode the target entry-level Java/automation market.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 136,
+          "endLine": 155
+        },
+        "evidence": [
+          {
+            "label": "src/scorer.py:136-155",
+            "projectId": "smartapply",
+            "path": "src/scorer.py",
+            "startLine": 136,
+            "endLine": 155,
+            "symbol": "is_relevant_jd"
+          },
+          {
+            "label": "src/scorer.py:540-566",
+            "projectId": "smartapply",
+            "path": "src/scorer.py",
+            "startLine": 540,
+            "endLine": 566,
+            "symbol": "score_jobs"
+          },
+          {
+            "label": "tests/test_components.py:16-33",
+            "projectId": "smartapply",
+            "path": "tests/test_components.py",
+            "startLine": 16,
+            "endLine": 33,
+            "symbol": "test_scorer_relevance_filtering"
+          }
+        ],
+        "followUps": [
+          "What does the minimum_score threshold filter out?",
+          "Why does the first scoring call run serially?",
+          "How does the JD cache avoid repeat scoring calls?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "3,360 to 1,032 is one recorded batch, not a general rate.",
+          "Why the keyword lists were chosen is not documented in the code."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/scorer.py:136-155",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 136,
+          "endLine": 155,
+          "symbol": "is_relevant_jd"
+        },
+        {
+          "label": "src/scorer.py:540-566",
+          "projectId": "smartapply",
+          "path": "src/scorer.py",
+          "startLine": 540,
+          "endLine": 566,
+          "symbol": "score_jobs"
+        },
+        {
+          "label": "tests/test_components.py:16-33",
+          "projectId": "smartapply",
+          "path": "tests/test_components.py",
+          "startLine": 16,
+          "endLine": 33,
+          "symbol": "test_scorer_relevance_filtering"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 11138,
+      "toolCalls": [
+        "search_code",
+        "get_project",
+        "find_symbol",
+        "read_file",
+        "render_visual"
+      ],
+      "costUsd": 0.00170882,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 7816,
+      "completionTokens": 839,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q005",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply make sure the tailored resume never invents a skill?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": false,
+          "detail": "no citation for: src/resume_tailor.py:224-277"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "The guardrail is deterministic Python, not prompt trust. The LLM returns a delta JSON, and `validate_and_sanitize_tailored()` in `src/resume_tailor.py` re-checks every skill against the master resume before merging.\n\nThe mechanism, as implemented: each skill from the model's output passes through `is_valid_candidate_skill()`; anything that fails is dropped and logged as a pruned hallucinated skill. Duplicates collapse, and immutable sections (personal info, education, certifications, achievements, employer and dates) are overwritten from the master resume instead of being accepted from the model. The module docstring states the intent plainly: `validate_and_sanitize_tailored() guarantees 100% truthfulness to plain_text_resume.yaml (0 hallucinations, locked immutables, 3 projects retained with role-weighted ranking, and auto-injection of applicable candidate skills M ∩ J for >= 95% coverage)`.\n\nThe tests exercise it adversarially. `test_f8_5_anti_hallucination_sanitization` injects \"Kubernetes Cluster Administrator\" and \"COBOL Mainframe\" into a master copy and asserts the validator rejects them with those names in the violations list.\n\nCaveat: the docstring's \"0 hallucinations\" and \"100% truthfulness\" are the code author's wording (documented), not an independently measured metric; I found no recorded metric for hallucination rate.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 542,
+          "endLine": 565
+        },
+        "evidence": [
+          {
+            "label": "src/resume_tailor.py:542-565",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 542,
+            "endLine": 565,
+            "symbol": "validate_and_sanitize_tailored"
+          },
+          {
+            "label": "src/resume_tailor.py:463-542",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 463,
+            "endLine": 542,
+            "symbol": "validate_and_sanitize_tailored"
+          },
+          {
+            "label": "tests/e2e/test_tier1_feature_coverage.py:624-630",
+            "projectId": "smartapply",
+            "path": "tests/e2e/test_tier1_feature_coverage.py",
+            "startLine": 624,
+            "endLine": 630,
+            "symbol": "test_f8_5_anti_hallucination_sanitization"
+          }
+        ],
+        "followUps": [
+          "How does is_valid_candidate_skill work?",
+          "What is the M ∩ J skill injection rule?",
+          "What does SmartApply cost to run?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "\"0 hallucinations\" and \"100% truthfulness\" are the code author's docstring wording, not a measured metric.",
+          "Experience bullets are re-ordered and rewritten by the model; only sections and skills are hard-locked.",
+          "1 citation point at source lines that were not opened in this answer; they resolve in the index, but the assistant did not read them."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/resume_tailor.py:542-565",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 542,
+          "endLine": 565,
+          "symbol": "validate_and_sanitize_tailored"
+        },
+        {
+          "label": "src/resume_tailor.py:463-542",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 463,
+          "endLine": 542,
+          "symbol": "validate_and_sanitize_tailored"
+        },
+        {
+          "label": "tests/e2e/test_tier1_feature_coverage.py:624-630",
+          "projectId": "smartapply",
+          "path": "tests/e2e/test_tier1_feature_coverage.py",
+          "startLine": 624,
+          "endLine": 630,
+          "symbol": "test_f8_5_anti_hallucination_sanitization"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 9325,
+      "toolCalls": [
+        "search_code",
+        "get_claim",
+        "read_file",
+        "render_visual"
+      ],
+      "costUsd": 0.00158162,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 6776,
+      "completionTokens": 887,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q006",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply pick which projects to put on a tailored resume?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": false,
+          "detail": "no citation for: src/resume_tailor.py:326-404"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "SmartApply ranks projects by a role \"lens\", not by free-form LLM choice. `detect_role_lens(job)` classifies the job, then `validate_and_sanitize_tailored` re-orders the verified master projects for that lens and enforces the budget. The prompt asks the model to pick 3 of 5 master projects \"that best align with the Target Role Lens\" and re-order them by relevance (`tailoring_prompt.txt` 31-70), but the Python side is the guardrail: `_match_project_key` maps each returned project name to a canonical key, unknown names are pruned, and the output is 3 projects with 3/2/2 bullets. A test documents the weighting: fullstack puts CampFlow first, while QA, Java and DotNet put SmartApply first. The code doesn't state why those specific weights were chosen — Inference: each lens foregrounds the project with matching stack surface. Caveat: the \"5 Master Projects\" in the prompt and the \"3 verified\" projects in the tests disagree.",
+      "visual": {
+        "visual": {
+          "kind": "architecture",
+          "projectId": "smartapply"
+        },
+        "evidence": [
+          {
+            "label": "src/resume_tailor.py:445-460",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 445,
+            "endLine": 460,
+            "symbol": "_match_project_key"
+          },
+          {
+            "label": "src/prompts/tailoring_prompt.txt:31-70",
+            "projectId": "smartapply",
+            "path": "src/prompts/tailoring_prompt.txt",
+            "startLine": 31,
+            "endLine": 70
+          },
+          {
+            "label": "tests/test_m4_tailoring_guardrails.py:386-398",
+            "projectId": "smartapply",
+            "path": "tests/test_m4_tailoring_guardrails.py",
+            "startLine": 386,
+            "endLine": 398,
+            "symbol": "test_m4_project_role_weighted_reordering"
+          }
+        ],
+        "followUps": [
+          "What are the role lenses and their project ranking?",
+          "How are fabricated projects pruned?",
+          "Why 3/2/2 bullet budgeting?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "The prompt names 5 master projects; the guardrail tests expect 3 verified ones.",
+          "The ranking weights per lens are visible in tests, not in a documented rationale."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/resume_tailor.py:445-460",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 445,
+          "endLine": 460,
+          "symbol": "_match_project_key"
+        },
+        {
+          "label": "src/prompts/tailoring_prompt.txt:31-70",
+          "projectId": "smartapply",
+          "path": "src/prompts/tailoring_prompt.txt",
+          "startLine": 31,
+          "endLine": 70
+        },
+        {
+          "label": "tests/test_m4_tailoring_guardrails.py:386-398",
+          "projectId": "smartapply",
+          "path": "tests/test_m4_tailoring_guardrails.py",
+          "startLine": 386,
+          "endLine": 398,
+          "symbol": "test_m4_project_role_weighted_reordering"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 10804,
+      "toolCalls": [
+        "search_code",
+        "get_project",
+        "find_symbol",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00292089,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 16219,
+      "completionTokens": 759,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q004",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply turn a DeepSeek response into structured scoring data?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": true,
+          "detail": "all 1 citation(s) matched"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "Structured scoring comes from two guards: the API call constrains the format, and `extract_json_str` repairs it afterwards.\n\n`call_ai_scoring_async` (src/ai_engine.py:249-328) sends the scoring prompt with `temperature=0.3` and `response_format={\"type\": \"json_object\"}`, so DeepSeek is asked for a JSON object rather than prose. The raw `response.choices[0].message.content` is passed through `extract_json_str` before being returned, alongside a `TokenUsage` dict carrying prompt/cached/miss/completion tokens, total, `cost_usd`, model and stage. Usage is read defensively: if DeepSeek reports no cache split, cache miss is set to the prompt total; cost comes from `calculate_deepseek_cost` (lines 59-74) using per-million-tier rates. Failed attempts retry up to three times with exponential backoff.\n\n`extract_json_str` (lines 214-246) strips markdown fences, then walks from each `{` using `json.JSONDecoder().raw_decode`, so trailing commentary is cut off; a first-brace/last-brace fallback follows.\n\nCaveat: the code doesn't state why this ladder exists — the docstring only says \"Robust extraction of JSON substring\". Inference: it targets fenced or chatty model output. Typed schema validation into `ScoringResult` is exercised in tests, not visible in the returned function.",
+      "visual": {
+        "visual": {
+          "kind": "flow",
+          "projectId": "smartapply"
+        },
+        "evidence": [
+          {
+            "label": "src/ai_engine.py:214-246",
+            "projectId": "smartapply",
+            "path": "src/ai_engine.py",
+            "startLine": 214,
+            "endLine": 246,
+            "symbol": "extract_json_str"
+          },
+          {
+            "label": "src/ai_engine.py:249-328",
+            "projectId": "smartapply",
+            "path": "src/ai_engine.py",
+            "startLine": 249,
+            "endLine": 328,
+            "symbol": "call_ai_scoring_async"
+          },
+          {
+            "label": "src/ai_engine.py:59-74",
+            "projectId": "smartapply",
+            "path": "src/ai_engine.py",
+            "startLine": 59,
+            "endLine": 74,
+            "symbol": "calculate_deepseek_cost"
+          }
+        ],
+        "followUps": [
+          "How is the parsed score turned into a ScoringResult model?",
+          "What does SmartApply do when DeepSeek returns invalid JSON?",
+          "How is per-call cost calculated for deepseek-chat?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "ScoringResult validation is only exercised in tests, not visible inside the scoring function.",
+          "The reason for the extraction ladder is not documented in the code."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/ai_engine.py:214-246",
+          "projectId": "smartapply",
+          "path": "src/ai_engine.py",
+          "startLine": 214,
+          "endLine": 246,
+          "symbol": "extract_json_str"
+        },
+        {
+          "label": "src/ai_engine.py:249-328",
+          "projectId": "smartapply",
+          "path": "src/ai_engine.py",
+          "startLine": 249,
+          "endLine": 328,
+          "symbol": "call_ai_scoring_async"
+        },
+        {
+          "label": "src/ai_engine.py:59-74",
+          "projectId": "smartapply",
+          "path": "src/ai_engine.py",
+          "startLine": 59,
+          "endLine": 74,
+          "symbol": "calculate_deepseek_cost"
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 13534,
+      "toolCalls": [
+        "search_code",
+        "search_code",
+        "search_code",
+        "read_file",
+        "render_visual"
+      ],
+      "costUsd": 0.00240902,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 12056,
+      "completionTokens": 946,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q091",
+      "bucket": "claim_correction",
+      "question": "Your resume says you have Spring Boot, MySQL and JPA project experience. Which project proves that?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 2 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:java-spring",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:java-spring",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "I'll check the claim ledger for that wording and the projects behind it.That claim is not supported. The ledger marks \"Spring Boot/MySQL/JPA project experience\" as **contradicted**: across the audited folders there is no `pom.xml`, no Spring Boot application and no MySQL project. The only `.java` files are DSA solutions and Flutter-generated files.\n\nWhat is supported: Java sits in the internship column (with SQL, JDBC and REST APIs), and Spring Core, Hibernate/JPA and MySQL sit in **coursework**, not shipped work. Shipped stacks are Node.js/Express, MongoDB/Mongoose, Supabase, SQLite and Flutter — none is Spring Boot. Maven appears only as a tool.\n\nThe approved way to say it: \"I use Java for DSA and used it in my internship. I do not currently have a public Spring Boot project; that is a gap I am addressing.\"",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "java-spring"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "Which project best proves the shipped backend skills?",
+          "Where does Java actually appear in the work?",
+          "What does the internship claim say?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "Audit is of local folders dated 2026-10-19; a private/unpublished Spring repo wouldn't appear.",
+          "Ledger status is contradicted, so no project may be cited for this claim."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 3555,
+      "toolCalls": [
+        "get_claim",
+        "get_profile",
+        "render_visual"
+      ],
+      "costUsd": 0.00039311,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 722,
+      "completionTokens": 435,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q007",
+      "bucket": "code_explanation",
+      "question": "How does SmartApply check that a job description's requirements are actually covered by the resume?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": true,
+          "detail": "all 1 citation(s) matched"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "SmartApply checks coverage in two steps, both in `src/resume_tailor.py`.\n\nFirst `get_applicable_candidate_skills` (lines 326-404) builds the set the code calls A = M ∩ J: master-resume skills that the job actually asks for. The job text it searches is title + `extracted_requirements` + description, lowercased, and each skill is only added if `is_valid_candidate_skill` confirms the candidate really has it against the master resume. `extracted_requirements` itself is produced by the LLM scoring prompt (`src/prompts/scoring_prompt.txt:31-43`), which requires missing skills to be cross-checked against all resume sections first.\n\nThen `calculate_jd_requirement_coverage` (lines 407-442) compares the tailored resume's `skills` list to A and returns coverage = |T ∩ A| / |A| × 100, rounding to two decimals, with 100.0 when A is empty. Matching is normalised plus a word-boundary regex fallback so \"Spring\" and \"Spring Boot\" pair up.\n\nCaveat: the matching is a fixed hardcoded skill list with regex aliases, not open-ended NLP. In the code, no ATS re-parse feeds back into this score — the ATS check lives separately in `ats_verifier.py`.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 407,
+          "endLine": 442
+        },
+        "evidence": [
+          {
+            "label": "src/resume_tailor.py:407-442",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 407,
+            "endLine": 442,
+            "symbol": "calculate_jd_requirement_coverage"
+          },
+          {
+            "label": "src/resume_tailor.py:326-404",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 326,
+            "endLine": 404,
+            "symbol": "get_applicable_candidate_skills"
+          },
+          {
+            "label": "src/prompts/scoring_prompt.txt:31-43",
+            "projectId": "smartapply",
+            "path": "src/prompts/scoring_prompt.txt",
+            "startLine": 31,
+            "endLine": 43
+          }
+        ],
+        "followUps": [
+          "What does is_valid_candidate_skill reject?",
+          "How does ats_verifier.py check the rendered PDF?",
+          "What happens when coverage falls below target?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "Coverage is measured against a hardcoded skill list with regex aliases, not arbitrary JD terms.",
+          "The 95% coverage target appears only in a test assertion, not in verified metrics."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/resume_tailor.py:407-442",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 407,
+          "endLine": 442,
+          "symbol": "calculate_jd_requirement_coverage"
+        },
+        {
+          "label": "src/resume_tailor.py:326-404",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 326,
+          "endLine": 404,
+          "symbol": "get_applicable_candidate_skills"
+        },
+        {
+          "label": "src/prompts/scoring_prompt.txt:31-43",
+          "projectId": "smartapply",
+          "path": "src/prompts/scoring_prompt.txt",
+          "startLine": 31,
+          "endLine": 43
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 9259,
+      "toolCalls": [
+        "search_code",
+        "get_project",
+        "find_symbol",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00190952,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 9158,
+      "completionTokens": 838,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q008",
+      "bucket": "code_explanation",
+      "question": "What role lens does SmartApply apply when it tailors a resume for a Java backend job?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "evidence",
+          "ok": true,
+          "detail": "all 1 citation(s) matched"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "For a Java backend job, SmartApply applies the **`java`** lens — the internal lens id is the short string `\"java\"`, which is one of four possible values (`qa`, `java`, `dotnet`, `fullstack`).\n\n`detect_role_lens(job)` is deterministic, not model-chosen. It checks the lowercased title first: if the title matches `java|spring|spring boot|backend java|j2ee`, it returns `\"java\"` immediately. If the title is generic (e.g. \"Software Engineer Trainee\"), it falls through to a keyword count over title + description + extracted requirements, scoring `java|spring|spring boot|jdbc|hibernate|maven|jvm` against QA, .NET and full-stack term sets, and returns the highest-scoring lens.\n\nThe detected lens then drives the prompt: it must pick exactly 3 of 5 master projects that align with the lens, rewrite experience and project bullets through it, and extract 18–20 skills — all constrained to the master resume, \"Exactly 0 fabricated skills.\"\n\nCaveat: QA and .NET title matches are checked *before* Java, so a hybrid title resolves to those instead.\nInference: \"lens\" means a reframing instruction to the model, not a separate resume template — the prompt file doesn't say the template differs per lens.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 280,
+          "endLine": 323
+        },
+        "evidence": [
+          {
+            "label": "src/resume_tailor.py:280-323",
+            "projectId": "smartapply",
+            "path": "src/resume_tailor.py",
+            "startLine": 280,
+            "endLine": 323,
+            "symbol": "detect_role_lens"
+          },
+          {
+            "label": "src/prompts/tailoring_prompt.txt:31-70",
+            "projectId": "smartapply",
+            "path": "src/prompts/tailoring_prompt.txt",
+            "startLine": 31,
+            "endLine": 70
+          }
+        ],
+        "followUps": [
+          "What are the four lenses and how are they scored?",
+          "How does the lens pick which 3 projects to keep?",
+          "What stops the tailor from inventing skills?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "QA and .NET title matches are evaluated before Java, so hybrid titles resolve to those lenses first.",
+          "Lens only changes tailoring instructions; the prompt file does not describe separate templates.",
+          "1 citation could not be verified against the source index and was dropped."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 1
+      },
+      "evidence": [
+        {
+          "label": "src/resume_tailor.py:280-323",
+          "projectId": "smartapply",
+          "path": "src/resume_tailor.py",
+          "startLine": 280,
+          "endLine": 323,
+          "symbol": "detect_role_lens"
+        },
+        {
+          "label": "src/prompts/tailoring_prompt.txt:31-70",
+          "projectId": "smartapply",
+          "path": "src/prompts/tailoring_prompt.txt",
+          "startLine": 31,
+          "endLine": 70
+        }
+      ],
+      "evidenceFileMatched": true,
+      "evidenceEmpty": false,
+      "latencyMs": 8346,
+      "toolCalls": [
+        "search_code",
+        "get_project",
+        "find_symbol",
+        "render_visual"
+      ],
+      "costUsd": 0.00132917,
+      "cacheHitTokens": 14208,
+      "cacheMissTokens": 5337,
+      "completionTokens": 810,
+      "confidence": "medium",
+      "droppedCitations": 1,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q092",
+      "bucket": "claim_correction",
+      "question": "Tell me about MedFlow, the Spring Boot healthcare service with JWT RBAC and 40% faster reports.",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": false,
+          "detail": "present: pom.xml"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:medflow",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:medflow",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "That claim is not supported. There is no MedFlow Spring Boot project in the audited folders.\n\nThe approved wording: \"There is no MedFlow Spring Boot project. I do not present the Node hospital prototype as MedFlow or as HIPAA-compliant.\"\n\nWhat the evidence shows: the hospital-management-system repo is Node/Express/MongoDB, backend-only, with no reports module and no benchmarks — so the 40% report-throughput figure has no measurement behind it. There are also no HIPAA controls in it.\n\nThe Spring Boot claim is separately contradicted: across the audited folders there is no pom.xml, no Spring Boot application and no MySQL project. The only .java files are DSA solutions and Flutter-generated files. Approved wording: \"I use Java for DSA and used it in my internship. I do not currently have a public Spring Boot project; that is a gap I am addressing.\"\n\nIf you want a verified build to discuss, C54 is a live engine with 39 test assertions.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "medflow",
+            "java-spring"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "What is C54 and how does its settlement engine work?",
+          "Which projects are actually indexed in the source index?",
+          "What verified metrics do you have?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "The 40% report speedup is unverified: no benchmarks exist in the repo.",
+          "No Spring Boot or MySQL project was found in the audited folders."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 4149,
+      "toolCalls": [
+        "get_claim",
+        "get_claim",
+        "get_claim",
+        "get_project",
+        "render_visual"
+      ],
+      "costUsd": 0.00064479,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 2001,
+      "completionTokens": 520,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q093",
+      "bucket": "claim_correction",
+      "question": "What HIPAA controls does MedFlow implement?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 3 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:medflow",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:medflow",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "I'll check the claim ledger and the indexed code for MedFlow.That claim is not supported. There is no MedFlow Spring Boot project, and the only related repository the ledger points to is a Node/Express/MongoDB hospital-management prototype with no HIPAA controls.\n\nThe claim \"Spring Boot, MySQL, JPA/Hibernate, JWT, HIPAA, 40% report throughput\" has status **contradicted**. The recorded evidence: the hospital-management-system repo is Node/Express/MongoDB, backend-only, with no reports module, no benchmarks and no HIPAA controls; no Spring Boot/MySQL project exists in the audited folders.\n\nThe code index returns no hospital-management hits either — searching for HIPAA audit logging and access control only surfaces SmartApply's submission-audit tables (`src/tracker.py`), which are job-application proof records, not a compliance control.\n\nApproved wording, verbatim: \"There is no MedFlow Spring Boot project. I do not present the Node hospital prototype as MedFlow or as HIPAA-compliant.\"\n\nConfidence is high on the contradiction; the prototype's absence of controls is documented in the ledger, not something I re-read line by line here.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "medflow"
+          ]
+        },
+        "evidence": [
+          {
+            "label": "src/tracker.py:170-219",
+            "projectId": "smartapply",
+            "path": "src/tracker.py",
+            "startLine": 170,
+            "endLine": 219,
+            "symbol": "record_submission_audit"
+          }
+        ],
+        "followUps": [
+          "What does the hospital prototype actually implement?",
+          "Which claims in the ledger are verified?",
+          "How does SmartApply's submission audit trail work?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "No HIPAA-specific code was found in the index; absence described by the ledger, not re-read line by line."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/tracker.py:170-219",
+          "projectId": "smartapply",
+          "path": "src/tracker.py",
+          "startLine": 170,
+          "endLine": 219,
+          "symbol": "record_submission_audit"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 6396,
+      "toolCalls": [
+        "get_claim",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00077246,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 2787,
+      "completionTokens": 551,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q094",
+      "bucket": "claim_correction",
+      "question": "How does C54 use Socket.IO to drive concurrent multiplayer game loops?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 3 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:c54-socketio",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:c54-socketio",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got low"
+        }
+      ],
+      "answer": "That claim is not supported. C54 does not use Socket.IO, and there are no concurrent multiplayer game loops.\n\nWhat the repo actually does: it is a host-authoritative score tracker. The host enters rounds and writes the whole session JSON; guests subscribe over Supabase Realtime and see the scoreboard update read-only. Guests never act on the state, so there is no per-player concurrent gameplay loop.\n\nDocumented: \"A host-authoritative card-score tracker and settlement PWA using Supabase Realtime.\" The listed stack is JavaScript, PWA, Supabase, PostgreSQL and Supabase Realtime. Inference: \"Realtime\" here means a Supabase channel subscription, not an event-emission game tick.\n\nAlso worth stating honestly: the source index returned no matching chunks for C54 on this query, so I did not read the code itself — this comes from the project record and the claim ledger. Do not put \"Socket.IO\" on a resume for this project.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "c54-socketio"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "What actually settles debts in C54?",
+          "Which project does use real concurrency?",
+          "Show C54's verified metrics"
+        ],
+        "confidence": "low",
+        "caveats": [
+          "Source index returned no C54 code chunks for this query; answer rests on the project record and claim ledger.",
+          "Approved wording: \"A host-authoritative card-score tracker and settlement PWA using Supabase Realtime.\""
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 7621,
+      "toolCalls": [
+        "get_project",
+        "search_code",
+        "search_code",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00071679,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 2197,
+      "completionTokens": 591,
+      "confidence": "low",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q095",
+      "bucket": "claim_correction",
+      "question": "Does SmartApply render the resume PDF with WeasyPrint?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 3 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": false,
+          "detail": "expected claims, got code"
+        },
+        {
+          "name": "claim:smartapply-weasyprint",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:smartapply-weasyprint",
+          "ok": false,
+          "detail": "the claims visual declares null"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "That claim is not supported. The repo does not use WeasyPrint, and it is not imported anywhere in the indexed code. The pipeline renders ATS-oriented PDFs with Jinja2 + Playwright.\n\nMechanism: `generate_resume_pdf` in `src/pdf_generator.py` loads `resume_template.html` through a Jinja2 `Environment`, renders it with the tailored resume dict plus the job, then launches headless Chromium via Playwright, calls `page.set_content(html_out)` and `page.pdf(...)` with A4 format, `print_background=True` and zero margins. Afterwards it runs an ATS audit from `ats_verifier.audit_resume_pdf`, and a failure there is logged rather than raised. The test suite (`tests/test_m5_ats_pdf.py`, `tests/test_interactive_review_abort.py`) asserts a one-page PDF via pypdf after the same Playwright path.\n\nCaveat: the audit call is wrapped in a try/except and returns an empty string on render error.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 94,
+          "endLine": 139
+        },
+        "evidence": [
+          {
+            "label": "src/pdf_generator.py:94-139",
+            "projectId": "smartapply",
+            "path": "src/pdf_generator.py",
+            "startLine": 94,
+            "endLine": 139,
+            "symbol": "generate_resume_pdf"
+          },
+          {
+            "label": "tests/test_m5_ats_pdf.py:1-20",
+            "projectId": "smartapply",
+            "path": "tests/test_m5_ats_pdf.py",
+            "startLine": 1,
+            "endLine": 20
+          },
+          {
+            "label": "tests/test_interactive_review_abort.py:726-745",
+            "projectId": "smartapply",
+            "path": "tests/test_interactive_review_abort.py",
+            "startLine": 726,
+            "endLine": 745,
+            "symbol": "test_resume_template_strictly_one_page"
+          }
+        ],
+        "followUps": [
+          "How is the one-page ATS constraint enforced?",
+          "What does the ATS audit actually check?",
+          "Where is the resume HTML template built?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "No WeasyPrint import appears in the indexed code; the renderer is Jinja2 + Playwright Chromium.",
+          "The ATS audit failure is logged, not raised."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/pdf_generator.py:94-139",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 94,
+          "endLine": 139,
+          "symbol": "generate_resume_pdf"
+        },
+        {
+          "label": "tests/test_m5_ats_pdf.py:1-20",
+          "projectId": "smartapply",
+          "path": "tests/test_m5_ats_pdf.py",
+          "startLine": 1,
+          "endLine": 20
+        },
+        {
+          "label": "tests/test_interactive_review_abort.py:726-745",
+          "projectId": "smartapply",
+          "path": "tests/test_interactive_review_abort.py",
+          "startLine": 726,
+          "endLine": 745,
+          "symbol": "test_resume_template_strictly_one_page"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 7393,
+      "toolCalls": [
+        "get_claim",
+        "search_code",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00110619,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 4385,
+      "completionTokens": 693,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q096",
+      "bucket": "claim_correction",
+      "question": "Which template engine and renderer actually produce the ATS PDF in SmartApply?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 2 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 2 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": false,
+          "detail": "expected claims, got flow"
+        },
+        {
+          "name": "claim:smartapply-weasyprint",
+          "ok": false,
+          "detail": "the approved public wording is NOT reproduced: \"The pipeline renders ATS-oriented PDFs with Jinja2 + Playwright.\""
+        },
+        {
+          "name": "claimVisual:smartapply-weasyprint",
+          "ok": false,
+          "detail": "the claims visual declares null"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "**Jinja2 renders the HTML; Playwright's headless Chromium prints it to PDF.** WeasyPrint is not used.\n\nThe mechanism, from `src/pdf_generator.py`: a Jinja2 `Environment` with a `FileSystemLoader` pointed at the repo's `templates/` directory loads `resume_template.html`, and `template.render(resume=tailored_resume, job=job)` produces the HTML string (lines 94-139). That HTML is then pushed into a Chromium page with `page.set_content(html_out)` and written with `page.pdf(..., format=\"A4\", print_background=True)`, zero margins, margins handled in CSS. There are two entry points: `generate_pdf` reuses a shared Playwright `Page`, and `generate_resume_pdf` launches its own `sync_playwright()` Chromium session for standalone runs.\n\nAfter the write, `generate_resume_pdf` calls `audit_resume_pdf` from `ats_verifier` and logs violations. Tests in `tests/test_m5_ats_pdf.py` check the template for the six standard uppercase ATS headings and assert the output is strictly one page via pypdf.\n\nCaveat: the verifier's own check list I only saw indirectly through the test file, not the verifier source.",
+      "visual": {
+        "visual": {
+          "kind": "flow",
+          "projectId": "smartapply"
+        },
+        "evidence": [
+          {
+            "label": "src/pdf_generator.py:94-139",
+            "projectId": "smartapply",
+            "path": "src/pdf_generator.py",
+            "startLine": 94,
+            "endLine": 139,
+            "symbol": "generate_resume_pdf"
+          },
+          {
+            "label": "src/pdf_generator.py:10-89",
+            "projectId": "smartapply",
+            "path": "src/pdf_generator.py",
+            "startLine": 10,
+            "endLine": 89,
+            "symbol": "generate_pdf"
+          },
+          {
+            "label": "tests/test_m5_ats_pdf.py:91-105",
+            "projectId": "smartapply",
+            "path": "tests/test_m5_ats_pdf.py",
+            "startLine": 91,
+            "endLine": 105,
+            "symbol": "test_template_ats_headings"
+          }
+        ],
+        "followUps": [
+          "Why not WeasyPrint for the resume PDF?",
+          "What does the ATS verifier actually check?",
+          "How is the resume template kept to one page?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "ats_verifier.py source was not read directly; its checks are known only via the test file."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/pdf_generator.py:94-139",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 94,
+          "endLine": 139,
+          "symbol": "generate_resume_pdf"
+        },
+        {
+          "label": "src/pdf_generator.py:10-89",
+          "projectId": "smartapply",
+          "path": "src/pdf_generator.py",
+          "startLine": 10,
+          "endLine": 89,
+          "symbol": "generate_pdf"
+        },
+        {
+          "label": "tests/test_m5_ats_pdf.py:91-105",
+          "projectId": "smartapply",
+          "path": "tests/test_m5_ats_pdf.py",
+          "startLine": 91,
+          "endLine": 105,
+          "symbol": "test_template_ats_headings"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 6435,
+      "toolCalls": [
+        "get_project",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00109586,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 4395,
+      "completionTokens": 688,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q098",
+      "bucket": "claim_correction",
+      "question": "How many business owners adopted the CampFlow booking platform?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:campflow-owners",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:campflow-owners",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "**There is no verified adoption number, and the \"5+ business owners\" figure is not supported.**\n\nThe claim ledger records \"Adopted by 5+ commercial business owners.\" as **unverified**. The audit found no seed data, testimonials or owner records backing that number. At audit time the live API returned 3 properties under one owner — properties, not businesses, and from a single owner.\n\nThe approved public wording is:\n\n\"A multi-property booking platform. The live data I audited had three properties under one owner; I do not claim five paying businesses.\"\n\nSo the honest answer to \"how many business owners adopted it\" is: one owner confirmed, three properties, from one audit on 2026-10-19. Anything above that would be invented.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "campflow-owners"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "What is CampFlow built with?",
+          "What does the CampFlow data model look like?",
+          "Which other claims in the ledger are unverified?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "Single live API audit on 2026-10-19; adoption since then is unknown.",
+          "Three properties under one owner is not the same as three businesses."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 4010,
+      "toolCalls": [
+        "get_project",
+        "get_claim",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00062289,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 2199,
+      "completionTokens": 434,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q097",
+      "bucket": "claim_correction",
+      "question": "Your resume calls the booking project CampFlow. What is the project actually called in the code?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:pawna-name",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:pawna-name",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got high"
+        }
+      ],
+      "answer": "That claim is not supported. The string \"CampFlow\" does not appear anywhere in the repository. The app brands itself **Lonavala Stays** — `vite.config.js:26-27` sets `name: 'Lonavala Stays'` and `short_name: 'Lonavala'` — and the repo itself is `Pawna-camping`.\n\nWhat the code actually is: \"The project is \"Lonavala Stays\" — a multi-property camping and villa booking platform built with React, Express and MongoDB, deployed on Vercel and Render. \"CampFlow\" was a name I used on the resume that never made it into the code.\"\n\nThe mechanism is ordinary Express plus Mongoose: 8 Mongoose models, JWT role-scoped access for owners and managers, weekday/weekend pricing and blocked-date overlap checks in the booking controller (documented at `backend/controllers/bookingController.js`), and a React 19 + Vite frontend. A 58 MB Flutter mobile app exists only as an untracked local copy, not in the public repo. It is one monolith, not microservices — a separate claim that is only partly true.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "pawna-name"
+          ]
+        },
+        "evidence": [
+          {
+            "label": "src/App.jsx:59-65",
+            "projectId": "pawna",
+            "path": "src/App.jsx",
+            "startLine": 59,
+            "endLine": 65,
+            "symbol": "ConditionalWhatsApp"
+          },
+          {
+            "label": "backend/controllers/packageController.js:42-45",
+            "projectId": "pawna",
+            "path": "backend/controllers/packageController.js",
+            "startLine": 42,
+            "endLine": 45
+          }
+        ],
+        "followUps": [
+          "Is the microservices claim for Pawna supported?",
+          "What does the booking controller actually check?",
+          "Which Pawna claims are still unverified?"
+        ],
+        "confidence": "high",
+        "caveats": [
+          "Ranges cited are corroborating code, not the vite.config.js name block the evidence quotes.",
+          "The Flutter mobile app is untracked locally and was not indexed."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "src/App.jsx:59-65",
+          "projectId": "pawna",
+          "path": "src/App.jsx",
+          "startLine": 59,
+          "endLine": 65,
+          "symbol": "ConditionalWhatsApp"
+        },
+        {
+          "label": "backend/controllers/packageController.js:42-45",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 42,
+          "endLine": 45
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 6926,
+      "toolCalls": [
+        "get_claim",
+        "get_project",
+        "get_claim",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00100967,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 3775,
+      "completionTokens": 684,
+      "confidence": "high",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q099",
+      "bucket": "claim_correction",
+      "question": "Is CampFlow a multi-tenant portal with tenant isolation and self-serve onboarding?",
+      "pass": false,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": false,
+          "detail": "missing: multi-property"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": false,
+          "detail": "expected claims, got code"
+        },
+        {
+          "name": "claim:campflow-multitenant",
+          "ok": false,
+          "detail": "the approved public wording is NOT reproduced: \"A role-scoped, multi-property booking platform.\""
+        },
+        {
+          "name": "claimVisual:campflow-multitenant",
+          "ok": false,
+          "detail": "the claims visual declares null"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "I'll check the content layer and the source index for CampFlow.**No project called CampFlow exists in either layer.** The portfolio's project list is smartapply, pawna, c54, aura, personal-ai-os, dayscore and copilot. So there is no evidence of a \"CampFlow\" multi-tenant portal with tenant isolation and self-serve onboarding.\n\nThe nearest match is **Pawna** (Pawna-camping), a camping booking backend, and it does implement tenant scoping — just not under that name. In `backend/controllers/packageController.js`, `updatePackage` (lines 111-163) and `deletePackage` (lines 172-196) enforce a \"Multi-tenant authorization\" check: an `owner` may only modify or delete packages tied to a property in their own `req.user.properties` list, and the update path also verifies ownership of any destination property (`[PACKAGE NOT FOUND]` / `Access denied: you do not own the property for this package.`).\n\nWhat I did not verify: a self-serve onboarding flow, org-level provisioning or row-level isolation guarantees. I didn't find onboarding code in these results, so I can't assert it exists.",
+      "visual": {
+        "visual": {
+          "kind": "code",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 172,
+          "endLine": 196
+        },
+        "evidence": [
+          {
+            "label": "backend/controllers/packageController.js:172-196",
+            "projectId": "pawna",
+            "path": "backend/controllers/packageController.js",
+            "startLine": 172,
+            "endLine": 196,
+            "symbol": "deletePackage"
+          },
+          {
+            "label": "backend/controllers/packageController.js:111-163",
+            "projectId": "pawna",
+            "path": "backend/controllers/packageController.js",
+            "startLine": 111,
+            "endLine": 163,
+            "symbol": "updatePackage"
+          }
+        ],
+        "followUps": [
+          "How does Pawna decide which properties an owner owns?",
+          "Show the Pawna data model for properties and packages",
+          "Which projects have a self-serve onboarding flow?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "No project named CampFlow exists in the content layer or the source index.",
+          "Self-serve onboarding was not found in the code I read."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [
+        {
+          "label": "backend/controllers/packageController.js:172-196",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 172,
+          "endLine": 196,
+          "symbol": "deletePackage"
+        },
+        {
+          "label": "backend/controllers/packageController.js:111-163",
+          "projectId": "pawna",
+          "path": "backend/controllers/packageController.js",
+          "startLine": 111,
+          "endLine": 163,
+          "symbol": "updatePackage"
+        }
+      ],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 6069,
+      "toolCalls": [
+        "get_project",
+        "search_code",
+        "render_visual"
+      ],
+      "costUsd": 0.00104531,
+      "cacheHitTokens": 7936,
+      "cacheMissTokens": 4258,
+      "completionTokens": 638,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q100",
+      "bucket": "claim_correction",
+      "question": "Is CampFlow deployed as a set of RESTful microservices on Vercel?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 2 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:campflow-microservices",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:campflow-microservices",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "No. That claim is not supported. The ledger records \"RESTful API microservices on Vercel\" as **contradicted**: the evidence is one Vercel-hosted React SPA plus one Express API on Render — no service split, no queue, no independent deployables (source: `package.json`, `backend/server.js`, `vercel.json`).\n\nThe approved wording is: \"A React frontend on Vercel and an Express API on Render.\"\n\nSo the two-process shape is real and documented in the repo files; the \"microservices\" framing is not. Note the claim id `campflow-microservices` maps to the Pandava-camping/Pawna-camping repo in the ledger, and I have not read those source files directly here — the contradiction comes from the ledger's recorded evidence, not from my own read of the code. The source index was not consulted for this answer.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "campflow-microservices"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "What does Pawna camping actually deploy?",
+          "Which claims in the ledger are still contradicted?",
+          "What is the real architecture of the CampFlow backend?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "Contradiction is from the claim ledger's recorded evidence, not a direct read of the repo in this session."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 4594,
+      "toolCalls": [
+        "get_claim",
+        "get_project",
+        "get_claim",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00070592,
+      "cacheHitTokens": 11008,
+      "cacheMissTokens": 2522,
+      "completionTokens": 491,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q101",
+      "bucket": "claim_correction",
+      "question": "Are the CampFlow analytics dashboards real-time, and do push notifications work for owners?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 1 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 0 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:campflow-realtime-push",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:campflow-realtime-push",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "No. That claim is only partially supported.\n\nDashboards: the ledger records that they use Recharts and request/response APIs, not realtime push — so the numbers populate on request, not live. Push notifications: \"Web-push code exists, but the owner subscription flow is incomplete.\" The approved wording is: \"Analytics dashboards and a PWA shell; push notifications are partial.\"\n\nThe code doesn't state why the subscription flow stopped where it did. Inference: without a persisted owner subscription, the send path has no target to deliver to, so owners would not reliably receive alerts.\n\nSeparately, do not attach owner adoption to this. The \"5+ commercial business owners\" claim is unverified — no seed data or owner records support it, and the live API audit returned three properties under one owner. Approved wording: \"A multi-property booking platform. The live data I audited had three properties under one owner; I do not claim five paying businesses.\"",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "campflow-realtime-push",
+            "campflow-owners"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "What would it take to finish owner push subscriptions?",
+          "Which CampFlow claims are fully verified?",
+          "Is the C54 scoreboard realtime instead?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "Claim status only; the CampFlow source was not re-read for this answer.",
+          "Realtime vs request/response is from the audit note, not code I read here."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 0
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 4662,
+      "toolCalls": [
+        "get_claim",
+        "get_project",
+        "get_claim",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00070869,
+      "cacheHitTokens": 10880,
+      "cacheMissTokens": 2403,
+      "completionTokens": 526,
+      "confidence": "medium",
+      "droppedCitations": 0,
+      "httpStatus": 200,
+      "cached": false
+    },
+    {
+      "id": "q102",
+      "bucket": "claim_correction",
+      "question": "Is the Personal AI OS built with Python, Ollama, LangChain, FastAPI and SQLite?",
+      "pass": true,
+      "checks": [
+        {
+          "name": "answerContains",
+          "ok": true,
+          "detail": "all 2 substring(s) present"
+        },
+        {
+          "name": "answerNotContains",
+          "ok": true,
+          "detail": "none of the 3 forbidden substring(s) present"
+        },
+        {
+          "name": "visualKind",
+          "ok": true,
+          "detail": "expected claims, got claims"
+        },
+        {
+          "name": "claim:personal-ai-os-stack",
+          "ok": true,
+          "detail": "the approved public wording is reproduced verbatim"
+        },
+        {
+          "name": "claimVisual:personal-ai-os-stack",
+          "ok": true,
+          "detail": "the claims visual references the id"
+        },
+        {
+          "name": "confidence",
+          "ok": true,
+          "detail": "expected high, got medium"
+        }
+      ],
+      "answer": "That claim is not supported. The repo has no Python, Ollama, LangChain, FastAPI, or SQLite. What it actually is: \"A Flutter + Supabase assistant with a Deno edge function, Gemini, and a Groq fallback.\"\n\nMechanism: the client is Flutter/Dart with Riverpod; data lives in Supabase Postgres with Realtime channels; a single Deno/TypeScript edge function (supabase/functions/chat/index.ts, ~614 lines) handles intent routing with a regex fast-path, then calls Gemini under a JSON intent contract and falls back to Groq. Intents are validated and executed against Postgres. Inline charts and tables render in the chat.\n\nCaveats: no voice pipeline (text-only chat), no provider tool calling, and the second_brain.embedding table is unused, so it is not a working RAG system. The project is a prototype: 4.0k lines, 23 test declarations, 2 commits.",
+      "visual": {
+        "visual": {
+          "kind": "claims",
+          "claimIds": [
+            "personal-ai-os-stack"
+          ]
+        },
+        "evidence": [],
+        "followUps": [
+          "How does the regex fast-path avoid LLM tokens?",
+          "What is missing to make this a real RAG system?",
+          "How does the Gemini to Groq fallback work?"
+        ],
+        "confidence": "medium",
+        "caveats": [
+          "The described stack comes from the claim ledger and project record, not from a line-by-line read of the repo.",
+          "second_brain.embedding is unused, so the RAG claim does not hold either.",
+          "1 citation could not be verified against the source index and was dropped."
+        ],
+        "mode": "retrieval",
+        "droppedCitations": 1
+      },
+      "evidence": [],
+      "evidenceFileMatched": false,
+      "evidenceEmpty": false,
+      "latencyMs": 5266,
+      "toolCalls": [
+        "get_project",
+        "get_claim",
+        "get_claim",
+        "render_visual"
+      ],
+      "costUsd": 0.00047857,
+      "cacheHitTokens": 12672,
+      "cacheMissTokens": 645,
+      "completionTokens": 573,
+      "confidence": "medium",
+      "droppedCitations": 1,
+      "httpStatus": 200,
+      "cached": false
+    }
+  ]
+}

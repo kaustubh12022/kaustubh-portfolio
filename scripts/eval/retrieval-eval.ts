@@ -155,6 +155,14 @@ interface QuestionRecord {
       hitRateAt10: number;
       pathRecallAt5: number;
     };
+    /** The same, but with every hit expanded to its whole function. */
+    expandedToFunction: {
+      recallAt5: number;
+      recallAt10: number;
+      mrrAt10: number;
+      hitRateAt10: number;
+      pathRecallAt5: number;
+    };
   };
   /** The 1-based rank of the first chunk level relevant hit, 0 when none. */
   firstRelevantRank: number;
@@ -189,6 +197,30 @@ function firstRelevantRank(
 }
 
 const records: QuestionRecord[] = [];
+
+/* The symbol spans, read once. */
+{
+  const { query } = await import("@/lib/retrieval/db.js");
+  const spanRows = await query<{
+    project_id: string;
+    path: string;
+    symbol: string;
+    lo: number;
+    hi: number;
+  }>(
+    `SELECT project_id, path, symbol,
+            min(start_line)::int AS lo, max(end_line)::int AS hi
+       FROM chunks
+      WHERE symbol <> ''
+      GROUP BY project_id, path, symbol`,
+  );
+  for (const row of spanRows.rows) {
+    SYMBOL_SPANS.set(`${row.project_id}::${row.path}::${row.symbol}`, {
+      lo: row.lo,
+      hi: row.hi,
+    });
+  }
+}
 
 for (const question of scorable) {
   const expected = question.expect.evidence.map((evidence) => ({
@@ -270,6 +302,20 @@ for (const question of scorable) {
       keywordRank: hit.keywordRank,
     }));
 
+  /** What the numbers would be if every hit were expanded to its function. */
+  const expandedHits = deepHits.slice(0, 10).map((hit) =>
+    expandToSymbol({
+      projectId: hit.projectId,
+      path: hit.path,
+      startLine: hit.startLine,
+      endLine: hit.endLine,
+      symbol: hit.symbol,
+      score: hit.score,
+      vectorRank: hit.vectorRank,
+      keywordRank: hit.keywordRank,
+    }),
+  );
+
   records.push({
     id: question.id,
     bucket: question.bucket,
@@ -304,6 +350,13 @@ for (const question of scorable) {
         mrrAt10: mrrAtK(implementationHits, expected, 10),
         hitRateAt10: hitRate(implementationHits, expected, 10),
         pathRecallAt5: recallAtK(implementationHits, expectedPaths, 5),
+      },
+      expandedToFunction: {
+        recallAt5: recallAtK(expandedHits, expected, 5),
+        recallAt10: recallAtK(expandedHits, expected, 10),
+        mrrAt10: mrrAtK(expandedHits, expected, 10),
+        hitRateAt10: hitRate(expandedHits, expected, 10),
+        pathRecallAt5: recallAtK(expandedHits, expectedPaths, 5),
       },
     },
     firstRelevantRank: firstRelevantRank(hitList, expected),
@@ -362,6 +415,27 @@ export function isImplementationPath(path: string): boolean {
   if (/(^|\/)src\/prompts\//.test(path)) return false;
   if (/(^|\/)templates?\//.test(path)) return false;
   return true;
+}
+
+/**
+ * The full line span of every symbol in the index.
+ *
+ * Used by the "expand to the enclosing function" diagnostic: when the
+ * retriever returns ONE chunk of a long function, the model is handed a
+ * fragment. The fix is to expand the hit to the whole function, so the
+ * chunk it was scored on contains the code that answers the question.
+ */
+const SYMBOL_SPANS = new Map<string, { lo: number; hi: number }>();
+
+/**
+ * What the numbers would be if every hit were expanded to the whole
+ * function it belongs to.
+ */
+function expandToSymbol(hit: HitRecord): HitRecord {
+  if (!hit.symbol) return hit;
+  const span = SYMBOL_SPANS.get(`${hit.projectId}::${hit.path}::${hit.symbol}`);
+  if (!span) return hit;
+  return { ...hit, startLine: span.lo, endLine: span.hi };
 }
 
 /* ------------------------------------------------------------------ */
@@ -556,6 +630,7 @@ const report = {
     withoutTestChunks: sourceOnly,
     withoutTestChunksDeepPool: sourceOnlyDeep,
     implementationChunksOnly: implementationOnly,
+    expandedToFunction,
   },
   worst: worst.map((item) => ({
     id: item.id,
@@ -623,6 +698,10 @@ if (options.json) {
   console.log(
     `  IMPL ONLY recall@5 ${pct(implementationOnly.recallAt5)}  recall@10 ${pct(implementationOnly.recallAt10)}  ` +
       `MRR@10 ${pct(implementationOnly.mrrAt10)}  hit@10 ${pct(implementationOnly.hitRateAt10)}  (40-candidate pool, implementation code only)`,
+  );
+  console.log(
+    `  EXPANDED  recall@5 ${pct(expandedToFunction.recallAt5)}  recall@10 ${pct(expandedToFunction.recallAt10)}  ` +
+      `MRR@10 ${pct(expandedToFunction.mrrAt10)}  hit@10 ${pct(expandedToFunction.hitRateAt10)}  (every hit expanded to its whole function)`,
   );
 
   console.log("");

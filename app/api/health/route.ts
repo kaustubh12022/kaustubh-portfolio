@@ -3,34 +3,110 @@ import "server-only";
 /**
  * GET /api/health
  *
- * A cheap liveness + readiness probe.
+ * A liveness and readiness probe that names the failing layer.
  *
- * It answers three questions:
- *   - is the app up?                       -> `ok`
- *   - is the source index populated?       -> `chunks`
- *   - which embedding model wrote it?      -> `embeddingModel`
+ * It answers:
+ *   - is the app up?                    -> `ok`
+ *   - is the source index populated?    -> `chunks`
+ *   - which embedding model wrote it?   -> `embeddingModel`
+ *   - can the assistant actually search?-> `retrieval`
+ *   - how much of the daily budget is left? -> `spend`
  *
- * The index statistics come from `getProjectStats()`, which reads the
- * `index_manifest` table and counts the live rows in `chunks`. A non-zero
- * chunk count means retrieval will actually work; a zero means the site is
- * up but the assistant can only answer from the claim ledger.
+ * The `retrieval` block is the important one. The index can be populated and
+ * the app can still be unable to search it: the embedding model may fail to
+ * load, the pooled connection may be refused, or the ANN index may be
+ * unusable through the pooler. Each of those has a different fix, so the
+ * probe reports which one it is rather than a single boolean.
  *
- * The route never throws: a database failure is reported as `ok: false`
- * with the reason, so a monitor gets a 200 with a readable body instead of a
- * stack trace.
+ * The route never throws: a failure is reported as `ok: false` with the
+ * reason, so a monitor gets a readable body instead of a stack trace.
  */
 
-import { EMBEDDING_MODEL } from "@/lib/retrieval/embed";
-import { getProjectStats } from "@/lib/retrieval/search";
 import { cacheSize } from "@/lib/ai/cache";
 import {
   dailyCeilingUsd,
   spendRemainingUsd,
   spendTodayUsd,
 } from "@/lib/ai/spend";
+import { EMBEDDING_MODEL, embedQuery } from "@/lib/retrieval/embed";
+import { getProjectStats, searchChunks } from "@/lib/retrieval/search";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type LayerState = {
+  ok: boolean;
+  detail: string;
+};
+
+/**
+ * Exercise the retrieval path end to end, one layer at a time.
+ *
+ * This is a real query against the real index with a real embedding. It
+ * costs no LLM tokens and takes a few milliseconds.
+ */
+async function probeRetrieval(): Promise<{
+  embedding: LayerState;
+  database: LayerState;
+  search: LayerState;
+}> {
+  let embedding: LayerState = { ok: false, detail: "not attempted" };
+  let database: LayerState = { ok: false, detail: "not attempted" };
+  let search: LayerState = { ok: false, detail: "not attempted" };
+
+  let vector: Float32Array | null = null;
+  try {
+    const started = Date.now();
+    vector = await embedQuery("health check: a function that returns a cost");
+    embedding = {
+      ok: vector.length > 0,
+      detail: `loaded and embedded in ${Date.now() - started}ms, ${vector.length} dims`,
+    };
+  } catch (error) {
+    embedding = {
+      ok: false,
+      detail: `the embedding model could not be loaded: ${(error as Error).message}`,
+    };
+  }
+
+  if (!vector) {
+    return {
+      embedding,
+      database: { ok: false, detail: "skipped: no embedding" },
+      search: { ok: false, detail: "skipped: no embedding" },
+    };
+  }
+
+  try {
+    const started = Date.now();
+    const stats = await getProjectStats();
+    database = {
+      ok: stats.length > 0,
+      detail: `read ${stats.length} manifest rows in ${Date.now() - started}ms`,
+    };
+  } catch (error) {
+    database = { ok: false, detail: (error as Error).message };
+    return {
+      embedding,
+      database,
+      search: { ok: false, detail: "skipped: the database is unreachable" },
+    };
+  }
+
+  try {
+    const started = Date.now();
+    const hits = await searchChunks({ query: "cost calculation", limit: 3 }, vector);
+    search = {
+      ok: hits.length > 0,
+      detail: `${hits.length} hits in ${Date.now() - started}ms` +
+        (hits.length ? `, top=${hits[0].path}:${hits[0].startLine}` : ""),
+    };
+  } catch (error) {
+    search = { ok: false, detail: (error as Error).message };
+  }
+
+  return { embedding, database, search };
+}
 
 export async function GET(): Promise<Response> {
   try {
@@ -40,15 +116,21 @@ export async function GET(): Promise<Response> {
     const files = stats.reduce((total, row) => total + row.fileCount, 0);
     const models = [...new Set(stats.map((row) => row.embeddingModel).filter(Boolean))];
 
+    const retrieval = await probeRetrieval();
+
     return Response.json(
       {
-        ok: chunks > 0,
+        ok: chunks > 0 && retrieval.search.ok,
         chunks,
         projects: stats.length,
         embeddingModel: models[0] ?? EMBEDDING_MODEL,
         files,
         /**
-         * The spend guard. `spendUsd` is what this instance has spent
+         * Each layer of the retrieval path, so a failure names itself.
+         */
+        retrieval,
+        /**
+         * The spend guard. `usdToday` is what this instance has spent
          * today, `remainingUsd` is what is left of the ceiling, and
          * `cachedAnswers` is how many answers are being served from memory
          * instead of the model.

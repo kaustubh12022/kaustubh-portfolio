@@ -959,6 +959,13 @@ function loadProgress(): void {
   for (const id of previous.selected) {
     if (previous.done[id]) resumedIds.add(id);
   }
+  // Carry the finished questions AND the money they cost into the new
+  // progress file: the file is the record of the whole RUN, not of the last
+  // invocation. A resume that forgot the earlier answers would ask for them
+  // again the next time it was killed.
+  progress.done = { ...previous.done };
+  progress.spendUsd = previous.spendUsd;
+  progress.startedAt = previous.startedAt || progress.startedAt;
   if (!options.json && resumedIds.size > 0) {
     console.log(
       `[eval] resuming: ${resumedIds.size} question(s) already done, ` +
@@ -1040,7 +1047,10 @@ async function runOne(
     costUsd: cost?.cost_usd ?? 0,
     at: new Date().toISOString(),
   };
-  progress.spendUsd = spendUsd;
+  // The file carries the spend of the WHOLE run lineage (a resumed run
+  // continues the same total); the in-memory `spendUsd` is this
+  // invocation only, because that is what the ceiling applies to.
+  progress.spendUsd += cost?.cost_usd ?? 0;
   writeProgress(progress);
   if (!options.json) {
     const costText = response.cacheHit
