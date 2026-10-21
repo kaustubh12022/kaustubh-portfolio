@@ -10,6 +10,11 @@ import {
   MCP_PROTOCOL_VERSION,
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@/lib/mcp/tools";
+import {
+  checkRateLimit,
+  clientKey,
+  MCP_RATE_LIMIT_MAX,
+} from "@/lib/ai/ratelimit";
 
 /**
  * POST /mcp - the MCP endpoint.
@@ -178,10 +183,10 @@ let openEndpointWarned = false;
 function warnOpenEndpoint(): void {
   if (openEndpointWarned) return;
   openEndpointWarned = true;
-  console.warn(
-    "[mcp] WARNING: MCP_AUTH_TOKEN is not set, so /mcp is OPEN. " +
+  console.error(
+    "[mcp] ERROR: MCP_AUTH_TOKEN is not set, so /mcp is OPEN. " +
       "It is read-only, but it exposes the owner's source code and the " +
-      "claim ledger. Set MCP_AUTH_TOKEN to require a bearer token.",
+      "claim ledger. Set MCP_AUTH_TOKEN to require a bearer token in production.",
   );
 }
 
@@ -192,8 +197,29 @@ function warnOpenEndpoint(): void {
  */
 function checkAuth(request: Request): Response | null {
   const expected = process.env.MCP_AUTH_TOKEN?.trim();
+  const isProduction =
+    process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
   if (!expected) {
     warnOpenEndpoint();
+    if (isProduction) {
+      return new Response(
+        JSON.stringify({
+          error: "unauthorized",
+          message:
+            "This MCP endpoint requires MCP_AUTH_TOKEN in production.",
+        }),
+        {
+          status: 401,
+          headers: {
+            "content-type": "application/json",
+            "www-authenticate": 'Bearer realm="mcp"',
+            "cache-control": "no-store",
+            ...CORS_HEADERS,
+          },
+        },
+      );
+    }
     return null;
   }
 
@@ -263,6 +289,32 @@ export async function GET(): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const unauthorized = checkAuth(request);
   if (unauthorized) return unauthorized;
+
+  const key = `mcp:${clientKey(request)}`;
+  const rateLimit = checkRateLimit(key, MCP_RATE_LIMIT_MAX);
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32000,
+          message:
+            "Too Many Requests: MCP rate limit exceeded (60 requests per 5 minutes).",
+          data: { retryAfterSeconds: rateLimit.retryAfterSeconds },
+        },
+      }),
+      {
+        status: 429,
+        headers: {
+          "content-type": "application/json",
+          "retry-after": String(rateLimit.retryAfterSeconds),
+          "cache-control": "no-store",
+          ...CORS_HEADERS,
+        },
+      },
+    );
+  }
 
   /* ---------------------------------------------------------------- */
   /* 1. The protocol version                                           */

@@ -320,6 +320,18 @@ npm i @modelcontextprotocol/server@^2 @modelcontextprotocol/client@^2
 NODE_OPTIONS=--conditions=react-server npx tsx scripts/mcp/inspect.ts
 ```
 
+## Deploying
+
+When deploying to production (Vercel, Docker, or any public host), configure the following environment variable:
+
+```bash
+MCP_AUTH_TOKEN=<random-secure-token>
+```
+
+- **Authentication enforcement**: In production, unauthenticated requests (`POST /mcp` without an Authorization header or with an invalid bearer token) receive HTTP `401 Unauthorized`. Clients must send `Authorization: Bearer <MCP_AUTH_TOKEN>`.
+- **Per-IP Rate Limiting**: The endpoint enforces 60 requests per 5 minutes per client IP (`x-forwarded-for`). Exceeding the limit returns HTTP `429 Too Many Requests`.
+- **Limitation note**: Note that `lib/ai/ratelimit.ts` is an in-memory per-instance limiter keyed on client-controlled headers (`x-forwarded-for`), not a distributed security perimeter. For enterprise protection, front the endpoint with a CDN/WAF rate limiter.
+
 ## The honest limitations
 
 - **Read-only.** There is no write path, no shell and no filesystem access at

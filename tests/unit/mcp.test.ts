@@ -431,4 +431,65 @@ describe("the /mcp route", () => {
     const body = (await response.json()) as { error: { code: number } };
     expect(body.error.code).toBe(-32700);
   });
+
+  it("enforces bearer auth when MCP_AUTH_TOKEN is configured", async () => {
+    const originalToken = process.env.MCP_AUTH_TOKEN;
+    try {
+      process.env.MCP_AUTH_TOKEN = "secret-test-token-123";
+
+      // 1. Missing Authorization header -> 401
+      const noAuthResponse = await POST(
+        post({ jsonrpc: "2.0", id: 7, method: "ping", params: {} }),
+      );
+      expect(noAuthResponse.status).toBe(401);
+
+      // 2. Wrong Authorization bearer -> 401
+      const wrongAuthResponse = await POST(
+        post(
+          { jsonrpc: "2.0", id: 8, method: "ping", params: {} },
+          { authorization: "Bearer wrong-token" },
+        ),
+      );
+      expect(wrongAuthResponse.status).toBe(401);
+
+      // 3. Correct Authorization bearer -> 200
+      const correctAuthResponse = await POST(
+        post(
+          { jsonrpc: "2.0", id: 9, method: "ping", params: {} },
+          { authorization: "Bearer secret-test-token-123" },
+        ),
+      );
+      expect(correctAuthResponse.status).toBe(200);
+    } finally {
+      if (originalToken !== undefined) {
+        process.env.MCP_AUTH_TOKEN = originalToken;
+      } else {
+        delete process.env.MCP_AUTH_TOKEN;
+      }
+    }
+  });
+
+  it("enforces per-IP rate limiting (429 on request 61 within window)", async () => {
+    const testIp = `198.51.100.${Math.floor(Math.random() * 200) + 1}`;
+    let rateLimited = false;
+
+    for (let i = 0; i < 61; i++) {
+      const response = await POST(
+        post(
+          { jsonrpc: "2.0", id: 100 + i, method: "ping", params: {} },
+          { "x-forwarded-for": testIp, "mcp-method": "ping" },
+        ),
+      );
+      if (response.status === 429) {
+        rateLimited = true;
+        const body = (await response.json()) as {
+          error: { code: number; message: string };
+        };
+        expect(body.error.message).toContain("rate limit exceeded");
+        expect(response.headers.get("retry-after")).toBeDefined();
+        break;
+      }
+    }
+    expect(rateLimited).toBe(true);
+  });
 });

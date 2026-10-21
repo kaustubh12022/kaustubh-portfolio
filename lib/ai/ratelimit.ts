@@ -19,6 +19,9 @@ import "server-only";
 /** How many requests one client may make inside the window. */
 export const RATE_LIMIT_MAX = 10;
 
+/** Rate limit ceiling for the MCP endpoint (60 requests per 5 minutes). */
+export const MCP_RATE_LIMIT_MAX = 60;
+
 /** The window, in milliseconds. */
 export const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 
@@ -41,21 +44,27 @@ export type RateLimitResult = {
  * Consume one unit of the budget for `key`.
  *
  * @param key a stable identifier for the client (normally the IP)
+ * @param max the maximum requests allowed in the window (defaults to RATE_LIMIT_MAX)
+ * @param windowMs the window duration in milliseconds (defaults to RATE_LIMIT_WINDOW_MS)
  */
-export function checkRateLimit(key: string): RateLimitResult {
+export function checkRateLimit(
+  key: string,
+  max: number = RATE_LIMIT_MAX,
+  windowMs: number = RATE_LIMIT_WINDOW_MS,
+): RateLimitResult {
   const now = Date.now();
   const existing = buckets.get(key);
 
   if (!existing || existing.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
     return {
       allowed: true,
-      remaining: RATE_LIMIT_MAX - 1,
-      retryAfterSeconds: Math.ceil(RATE_LIMIT_WINDOW_MS / 1000),
+      remaining: max - 1,
+      retryAfterSeconds: Math.ceil(windowMs / 1000),
     };
   }
 
-  if (existing.count >= RATE_LIMIT_MAX) {
+  if (existing.count >= max) {
     return {
       allowed: false,
       remaining: 0,
@@ -66,7 +75,7 @@ export function checkRateLimit(key: string): RateLimitResult {
   existing.count += 1;
   return {
     allowed: true,
-    remaining: RATE_LIMIT_MAX - existing.count,
+    remaining: max - existing.count,
     retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
   };
 }
