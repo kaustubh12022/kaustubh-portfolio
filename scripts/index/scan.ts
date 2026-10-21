@@ -81,7 +81,7 @@ export const RULES: Rule[] = [
   {
     id: "pii-personal-phone",
     severity: "block",
-    pattern: new RegExp(`\\b${PERSONAL_PHONE}\\b`, "g"),
+    pattern: /(?:\+?91[\s-]?|0)?9975526627\b/g,
   },
   {
     id: "pii-personal-email",
@@ -270,6 +270,6 @@ export function scanProject(
  */
 export function redactOwnerPii(content: string): string {
   return content
-    .replace(new RegExp(`\\b${PERSONAL_PHONE}\\b`, "g"), "[REDACTED_PHONE]")
+    .replace(/(?:\+?91[\s-]?|0)?9975526627\b/g, "[REDACTED_PHONE]")
     .replace(new RegExp(PERSONAL_EMAIL.replace(/\./g, "\\."), "gi"), "[REDACTED_EMAIL]");
 }

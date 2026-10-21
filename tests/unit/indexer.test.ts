@@ -21,7 +21,7 @@ import { buildHeader, extractImports } from "@/scripts/index/header";
 import { chunkKey, contentHash } from "@/scripts/index/hash";
 import { upsertChunks } from "@/scripts/index/index";
 import { PROJECTS, getProject, repoName } from "@/scripts/index/projects";
-import { scanContent } from "@/scripts/index/scan";
+import { redactOwnerPii, scanContent } from "@/scripts/index/scan";
 
 const smartapply = getProject("smartapply")!;
 const pawna = getProject("pawna")!;
@@ -268,12 +268,26 @@ describe("scanContent - secrets", () => {
 /* ------------------------------------------------------------------ */
 
 describe("scanContent - PII", () => {
-  it("flags the personal phone number", () => {
-    const result = scanContent('phone: "+91-9975526627"', "profile.py");
-    expect(result.ok).toBe(false);
-    const finding = result.findings.find((f) => f.rule === "pii-personal-phone");
-    expect(finding).toBeDefined();
-    expect(finding!.severity).toBe("block");
+  it("flags all personal phone number formats (bare, +91-, and glued 91)", () => {
+    const formats = [
+      'phone = "9975526627"',
+      'phone = "+91-9975526627"',
+      'phone = "919975526627"',
+      'contact: +91 9975526627',
+      'tel: 09975526627',
+    ];
+
+    for (const text of formats) {
+      const result = scanContent(text, "profile.py");
+      expect(result.ok, `Should flag: ${text}`).toBe(false);
+      const finding = result.findings.find((f) => f.rule === "pii-personal-phone");
+      expect(finding, `Finding missing for: ${text}`).toBeDefined();
+      expect(finding!.severity).toBe("block");
+
+      const redacted = redactOwnerPii(text);
+      expect(redacted).not.toContain("9975526627");
+      expect(redacted).toContain("[REDACTED_PHONE]");
+    }
   });
 
   it("flags the personal email address", () => {
