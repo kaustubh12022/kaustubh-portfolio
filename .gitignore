@@ -39,3 +39,7 @@ public/media/**/*.mov
 
 # local index artifacts
 data/
+
+# local dev server logs
+.dev.log
+.dev.err
