@@ -69,10 +69,11 @@ export const PROJECTS: ProjectDef[] = [
       "index.html",
       "style.css",
       "sw.js",
-      "init_tables.js",
       "manifest.json",
     ],
-    exclude: [],
+    // NOTE: init_tables.js is excluded because it contains hardcoded DB init
+    // credentials. Full git history scrub is deferred to Phase B (A5).
+    exclude: ["init_tables.js"],
     languages: ["javascript", "html", "css", "json"],
   },
   {

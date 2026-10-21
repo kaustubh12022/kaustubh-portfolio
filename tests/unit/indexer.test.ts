@@ -95,7 +95,7 @@ describe("isAllowed (default deny)", () => {
     expect(isAllowed("config.yaml", smartapply)).toBe(true);
     expect(isAllowed("backend/routes/authRoutes.js", pawna)).toBe(true);
     expect(isAllowed("src/components/Booking.jsx", pawna)).toBe(true);
-    expect(isAllowed("init_tables.js", c54)).toBe(true);
+    expect(isAllowed("app.js", c54)).toBe(true);
   });
 
   it("rejects a file that is not under any include pattern", () => {
@@ -104,6 +104,7 @@ describe("isAllowed (default deny)", () => {
     expect(isAllowed("src/../config/profile.json", smartapply)).toBe(false);
     expect(isAllowed("docs/architecture.md", smartapply)).toBe(false);
     expect(isAllowed("vite.config.js", pawna)).toBe(false);
+    expect(isAllowed("init_tables.js", c54)).toBe(false);
   });
 
   it("rejects files under node_modules even when the include pattern matched", () => {

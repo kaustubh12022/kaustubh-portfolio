@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  serverExternalPackages: [
+    "@huggingface/transformers",
+    "onnxruntime-node",
+    "sharp",
+  ],
   /**
    * The embedding model is bundled with the deployment.
    *
@@ -24,9 +29,34 @@ const nextConfig: NextConfig = {
    * the chat endpoint, the health check, and the MCP server.
    */
   outputFileTracingIncludes: {
-    "/api/chat": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
-    "/api/health": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
-    "/mcp": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
+    "/api/chat": [
+      "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/**/*",
+      "./node_modules/onnxruntime-node/dist/**/*",
+      "./node_modules/onnxruntime-node/lib/**/*",
+      "./node_modules/onnxruntime-node/package.json",
+    ],
+    "/api/health": [
+      "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/**/*",
+      "./node_modules/onnxruntime-node/dist/**/*",
+      "./node_modules/onnxruntime-node/lib/**/*",
+      "./node_modules/onnxruntime-node/package.json",
+    ],
+    "/mcp": [
+      "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/**/*",
+      "./node_modules/onnxruntime-node/dist/**/*",
+      "./node_modules/onnxruntime-node/lib/**/*",
+      "./node_modules/onnxruntime-node/package.json",
+    ],
+  },
+  outputFileTracingExcludes: {
+    "*": [
+      "./node_modules/onnxruntime-node/bin/napi-v6/darwin/**/*",
+      "./node_modules/onnxruntime-node/bin/napi-v6/win32/**/*",
+      "./node_modules/onnxruntime-node/bin/napi-v6/linux/arm64/**/*",
+    ],
   },
 };
 
