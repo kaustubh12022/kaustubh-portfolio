@@ -43,3 +43,9 @@ data/
 # local dev server logs
 .dev.log
 .dev.err
+.vercel
+.env*
+
+# NOTE: models/all-MiniLM-L6-v2 IS committed on purpose (22.6 MB).
+# The embedding model is bundled so a serverless cold start does not depend
+# on reaching the Hugging Face CDN. Do not add it to this file.

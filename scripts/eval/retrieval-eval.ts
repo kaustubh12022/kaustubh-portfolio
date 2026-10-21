@@ -147,6 +147,14 @@ interface QuestionRecord {
       hitRateAt10: number;
       pathRecallAt5: number;
     };
+    /** The same, but with only IMPLEMENTATION code in the pool. */
+    implementationOnly: {
+      recallAt5: number;
+      recallAt10: number;
+      mrrAt10: number;
+      hitRateAt10: number;
+      pathRecallAt5: number;
+    };
   };
   /** The 1-based rank of the first chunk level relevant hit, 0 when none. */
   firstRelevantRank: number;
@@ -247,6 +255,21 @@ for (const question of scorable) {
       keywordRank: hit.keywordRank,
     }));
 
+  /** What the numbers would be if only IMPLEMENTATION code was in the pool. */
+  const implementationHits = deepHits
+    .filter((hit) => isImplementationPath(hit.path))
+    .slice(0, 10)
+    .map((hit) => ({
+      projectId: hit.projectId,
+      path: hit.path,
+      startLine: hit.startLine,
+      endLine: hit.endLine,
+      symbol: hit.symbol,
+      score: hit.score,
+      vectorRank: hit.vectorRank,
+      keywordRank: hit.keywordRank,
+    }));
+
   records.push({
     id: question.id,
     bucket: question.bucket,
@@ -274,6 +297,13 @@ for (const question of scorable) {
         mrrAt10: mrrAtK(deepSourceHits, expected, 10),
         hitRateAt10: hitRate(deepSourceHits, expected, 10),
         pathRecallAt5: recallAtK(deepSourceHits, expectedPaths, 5),
+      },
+      implementationOnly: {
+        recallAt5: recallAtK(implementationHits, expected, 5),
+        recallAt10: recallAtK(implementationHits, expected, 10),
+        mrrAt10: mrrAtK(implementationHits, expected, 10),
+        hitRateAt10: hitRate(implementationHits, expected, 10),
+        pathRecallAt5: recallAtK(implementationHits, expectedPaths, 5),
       },
     },
     firstRelevantRank: firstRelevantRank(hitList, expected),
@@ -308,6 +338,30 @@ export function isTestPath(path: string): boolean {
     /(^|\/)test_[^/]*\.py$/.test(path) ||
     /[^/]*_test\.(py|js|ts)$/.test(path)
   );
+}
+
+/**
+ * Is this path something other than IMPLEMENTATION code?
+ *
+ * The corpus contains three kinds of noise that the vector leg cannot tell
+ * apart from code:
+ *
+ *   - test files: short, dense, and full of the same words as the code
+ *   - prompt and documentation files: `src/prompts/tailoring_prompt.txt`
+ *     literally contains the words of the question ("role lens", "java
+ *     backend") without containing the implementation
+ *   - generated files: `*.g.dart`, `*.pb.dart`, `*.freezed.dart`
+ *
+ * The diagnostic below measures what the metrics would be if those chunks
+ * were not in the candidate pool.
+ */
+export function isImplementationPath(path: string): boolean {
+  if (isTestPath(path)) return false;
+  if (/\.(md|markdown|txt|rst)$/i.test(path)) return false;
+  if (/\.(g|pb|freezed|mock)\.(dart|ts|js)$/i.test(path)) return false;
+  if (/(^|\/)src\/prompts\//.test(path)) return false;
+  if (/(^|\/)templates?\//.test(path)) return false;
+  return true;
 }
 
 /* ------------------------------------------------------------------ */
@@ -448,6 +502,45 @@ const sourceOnlyDeep = {
         ) / scored.length,
 };
 
+/** The same aggregate, with only implementation code in the pool. */
+const implementationOnly = {
+  recallAt5:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.implementationOnly.recallAt5,
+          0,
+        ) / scored.length,
+  recallAt10:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.implementationOnly.recallAt10,
+          0,
+        ) / scored.length,
+  mrrAt10:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.implementationOnly.mrrAt10,
+          0,
+        ) / scored.length,
+  hitRateAt10:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.implementationOnly.hitRateAt10,
+          0,
+        ) / scored.length,
+  pathRecallAt5:
+    scored.length === 0
+      ? 0
+      : scored.reduce(
+          (sum, item) => sum + item.metrics.implementationOnly.pathRecallAt5,
+          0,
+        ) / scored.length,
+};
+
 const report = {
   generatedAt: new Date().toISOString(),
   thresholds: {
@@ -462,6 +555,7 @@ const report = {
     fileLevelRecallAt10: pathRecall10,
     withoutTestChunks: sourceOnly,
     withoutTestChunksDeepPool: sourceOnlyDeep,
+    implementationChunksOnly: implementationOnly,
   },
   worst: worst.map((item) => ({
     id: item.id,
@@ -525,6 +619,10 @@ if (options.json) {
   console.log(
     `  NO TESTS   recall@5 ${pct(sourceOnlyDeep.recallAt5)}  recall@10 ${pct(sourceOnlyDeep.recallAt10)}  ` +
       `MRR@10 ${pct(sourceOnlyDeep.mrrAt10)}  hit@10 ${pct(sourceOnlyDeep.hitRateAt10)}  (40-candidate pool, tests dropped)`,
+  );
+  console.log(
+    `  IMPL ONLY recall@5 ${pct(implementationOnly.recallAt5)}  recall@10 ${pct(implementationOnly.recallAt10)}  ` +
+      `MRR@10 ${pct(implementationOnly.mrrAt10)}  hit@10 ${pct(implementationOnly.hitRateAt10)}  (40-candidate pool, implementation code only)`,
   );
 
   console.log("");

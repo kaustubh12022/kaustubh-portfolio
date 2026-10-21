@@ -87,15 +87,18 @@ const pathsByProject = new Map<string, Set<string>>();
 for (const row of chunkRows.rows) {
   const pathKey = `${row.project_id}::${row.path}`;
   const symbolKey = `${row.project_id}::${row.symbol}`;
-  const symbolRows = byProjectSymbol.get(symbolKey) ?? [];
-  symbolRows.push(row);
-  byProjectSymbol.set(symbolKey, symbolRows);
-
   if (row.symbol !== "") {
-    const pathRows = byProjectPath.get(pathKey) ?? [];
-    pathRows.push(row);
-    byProjectPath.set(pathKey, pathRows);
+    const symbolRows = byProjectSymbol.get(symbolKey) ?? [];
+    symbolRows.push(row);
+    byProjectSymbol.set(symbolKey, symbolRows);
   }
+
+  // EVERY chunk belongs to its file - including the symbol-less ones. A SQL
+  // migration is chunked as plain blocks and carries no symbol at all, so
+  // filtering on `symbol <> ''` here would hide the file completely.
+  const pathRows = byProjectPath.get(pathKey) ?? [];
+  pathRows.push(row);
+  byProjectPath.set(pathKey, pathRows);
 
   const projectPaths = pathsByProject.get(row.project_id) ?? new Set<string>();
   projectPaths.add(row.path);

@@ -75,9 +75,35 @@ interface CliOptions {
    * the run stop instead. The default is deliberately small: the point of
    * a test run is to find out whether the change helped, not to spend the
    * balance.
+   *
+   * $0.15 is the default because a full 150 question run measures at about
+   * $0.153. The default therefore costs roughly ONE full run - a slice
+   * costs a tenth of that - and a mistake cannot burn the balance.
    */
   maxSpendUsd: number;
+  /** List what WOULD run and exit without calling the model. */
+  dryRun: boolean;
+  /** Resume from `evals/.last-run.json` instead of starting over. */
+  resume: boolean;
 }
+
+/**
+ * The measured cost of ONE cold answer, in USD.
+ *
+ * Measured over a 150 question run: $0.153169 / 150 = $0.001021, and
+ * $0.0009 is the conservative figure the cost policy quotes. The dry run
+ * estimate multiplies by {@link ESTIMATE_SAFETY_MARGIN} so the number it
+ * prints is an UPPER bound, never a promise.
+ */
+export const MEASURED_COST_PER_ANSWER_USD = 0.0009;
+
+/**
+ * The safety margin the dry run estimate applies.
+ *
+ * 1.2 covers the retries, the cache misses and the off-peak/peak price
+ * change that DeepSeek applied on 2026-08-16.
+ */
+export const ESTIMATE_SAFETY_MARGIN = 1.2;
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
@@ -89,7 +115,9 @@ function parseArgs(argv: string[]): CliOptions {
     url: "http://localhost:3000/api/chat",
     concurrency: 3,
     out: null,
-    maxSpendUsd: 0.50,
+    maxSpendUsd: 0.15,
+    dryRun: false,
+    resume: false,
   };
   for (const arg of argv) {
     if (arg.startsWith("--questions=")) {
@@ -123,6 +151,10 @@ function parseArgs(argv: string[]): CliOptions {
       options.maxSpendUsd = Number(arg.slice("--max-spend=".length));
     } else if (arg === "--json") {
       options.json = true;
+    } else if (arg === "--dry-run") {
+      options.dryRun = true;
+    } else if (arg === "--resume") {
+      options.resume = true;
     }
   }
   return options;
@@ -273,6 +305,14 @@ interface ChatResponse {
   toolCalls: string[];
   latencyMs: number;
   httpStatus: number;
+  /**
+   * True when the route served the answer from the answer cache.
+   *
+   * A cache hit costs NOTHING and writes NO row to `answer_log`, so the
+   * benchmark must not read the previous run's cost row for this question
+   * and pretend it paid for it again.
+   */
+  cacheHit: boolean;
   error?: string;
 }
 
@@ -313,9 +353,12 @@ async function askChat(
       toolCalls: [],
       latencyMs: Date.now() - startedAt,
       httpStatus: 0,
+      cacheHit: false,
       error: (error as Error).message,
     };
   }
+
+  const cacheHit = (response.headers.get("x-cache") ?? "").toUpperCase() === "HIT";
 
   const raw = await response.text();
   let answer = "";
@@ -347,6 +390,7 @@ async function askChat(
     toolCalls,
     latencyMs: Date.now() - startedAt,
     httpStatus: response.status,
+    cacheHit,
   };
 }
 
@@ -392,8 +436,22 @@ async function closeEvalPool(): Promise<void> {
   await current.end().catch(() => undefined);
 }
 
-/** Read the cost row the route wrote for this question. */
-async function readCost(question: string): Promise<AnswerLogRow | null> {
+/**
+ * Read the cost row the route wrote for this question.
+ *
+ * @param question the question text
+ * @param since    only rows written at or after this instant count
+ *
+ * The `since` filter is what makes the spend report truthful. Without it a
+ * CACHE HIT (no new row) would silently inherit the previous run's cost
+ * row for the same question and the benchmark would report money it never
+ * spent. The instant comes from the DATABASE clock, so there is no skew
+ * between the script and Neon.
+ */
+async function readCost(
+  question: string,
+  since: Date,
+): Promise<AnswerLogRow | null> {
   const db = await getPool();
   if (!db) return null;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -402,9 +460,10 @@ async function readCost(question: string): Promise<AnswerLogRow | null> {
               cost_usd, latency_ms, confidence, citations, tool_steps
          FROM answer_log
         WHERE question = $1
+          AND created_at >= $2
         ORDER BY id DESC
         LIMIT 1`,
-      [question.slice(0, 1000)],
+      [question.slice(0, 1000), since.toISOString()],
     )) as { rows: AnswerLogRow[] };
     if (result.rows.length > 0) {
       const row = result.rows[0];
@@ -464,6 +523,8 @@ interface Result {
   confidence: string;
   droppedCitations: number;
   httpStatus: number;
+  /** True when the answer came from the route's answer cache: $0. */
+  cached: boolean;
   error?: string;
 }
 
@@ -651,6 +712,7 @@ function evaluate(
     confidence: actualConfidence,
     droppedCitations: response.visual?.droppedCitations ?? 0,
     httpStatus: response.httpStatus,
+    cached: response.cacheHit,
     error: response.error,
   };
 }
@@ -687,18 +749,73 @@ if (Object.keys(options.take).length > 0) {
   });
 }
 
-if (!options.json) {
-  console.log(
-    `[eval] ${selected.length} question(s) against ${options.url} ` +
-      `(concurrency ${options.concurrency})`,
-  );
-  console.log("[eval] this calls the model. It costs money.");
+/* ------------------------------------------------------------------ */
+/* The progress file                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Where a resumable run writes its progress.
+ *
+ * The file is small and machine readable: the ids that are already done,
+ * the money they cost and the selection they were part of. A run that is
+ * killed (Ctrl-C, a crashed laptop, a spend ceiling) can be continued with
+ * `--resume` instead of paying for the same answers twice.
+ */
+export const PROGRESS_FILE = path.join(
+  process.cwd(),
+  "evals",
+  ".last-run.json",
+);
+
+interface ProgressFile {
+  /** When the run started (ISO). */
+  startedAt: string;
+  /** The ids the run selected, in order. */
+  selected: string[];
+  /** The ids that are finished, with what they cost. */
+  done: Record<string, { pass: boolean; costUsd: number; at: string }>;
+  /** The money the run has spent so far. */
+  spendUsd: number;
 }
+
+/** Read the progress file, or `null` when there is none (or it is broken). */
+function readProgress(): ProgressFile | null {
+  try {
+    const raw = readFileSync(PROGRESS_FILE, "utf8");
+    const parsed = JSON.parse(raw) as Partial<ProgressFile>;
+    if (!parsed || !Array.isArray(parsed.selected) || !parsed.done) {
+      return null;
+    }
+    return {
+      startedAt: parsed.startedAt ?? "",
+      selected: parsed.selected,
+      done: parsed.done,
+      spendUsd: Number(parsed.spendUsd) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Write the progress file. A failure to write is not fatal. */
+function writeProgress(progress: ProgressFile): void {
+  try {
+    writeFileSync(PROGRESS_FILE, JSON.stringify(progress, null, 2), "utf8");
+  } catch (error) {
+    console.warn(
+      `[eval] could not write ${PROGRESS_FILE}: ${(error as Error).message}`,
+    );
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* The run                                                             */
+/* ------------------------------------------------------------------ */
 
 const results: Result[] = [];
 
 /**
- * The running spend of this benchmark.
+ * The running spend of THIS run, in USD.
  *
  * The benchmark calls a real LLM, so a bug in the harness can burn real
  * money. This is the guard: as soon as the spend crosses the ceiling, no
@@ -717,23 +834,194 @@ function recordSpend(costUsd: number): void {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* The dry run                                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Print what WOULD run and exit.
+ *
+ * The estimate is `count * 0.0009 * 1.2`: the measured cost of one cold
+ * answer plus a 20% margin for retries and the peak/off-peak price change.
+ * It is an upper bound, never a promise.
+ */
+function dryRun(): void {
+  const byBucket = new Map<string, number>();
+  for (const question of selected) {
+    byBucket.set(question.bucket, (byBucket.get(question.bucket) ?? 0) + 1);
+  }
+  const estimate =
+    selected.length * MEASURED_COST_PER_ANSWER_USD * ESTIMATE_SAFETY_MARGIN;
+
+  console.log("");
+  console.log("=== DRY RUN - no model call, no cost ===");
+  console.log("");
+  console.log(`target       : ${options.url}`);
+  console.log(`questions   : ${selected.length}`);
+  console.log(`ceiling      : $${options.maxSpendUsd.toFixed(2)}`);
+  console.log(
+    `unit cost    : $${MEASURED_COST_PER_ANSWER_USD} measured ` +
+      `x ${ESTIMATE_SAFETY_MARGIN} safety = ` +
+      `$${(MEASURED_COST_PER_ANSWER_USD * ESTIMATE_SAFETY_MARGIN).toFixed(6)}`,
+  );
+  console.log(`ESTIMATED   : $${estimate.toFixed(6)}`);
+  console.log("");
+  console.log("PER BUCKET");
+  for (const [bucket, count] of [...byBucket.entries()].sort()) {
+    const bucketEstimate =
+      count * MEASURED_COST_PER_ANSWER_USD * ESTIMATE_SAFETY_MARGIN;
+    console.log(
+      `  ${bucket.padEnd(32)} ${String(count).padStart(4)} question(s)  ` +
+        `estimated $${bucketEstimate.toFixed(6)}`,
+    );
+  }
+  console.log("");
+  console.log(
+    estimate <= options.maxSpendUsd
+      ? `[eval] the estimate fits inside the ceiling. Run it without --dry-run to spend it.`
+      : `[eval] WARNING: the estimate EXCEEDS the ceiling of $${options.maxSpendUsd.toFixed(2)}. ` +
+          `The run will stop at the ceiling and the rest will be left unmeasured.`,
+  );
+  console.log("");
+  process.exit(0);
+}
+
+/* ------------------------------------------------------------------ */
+/* The progress bookkeeping                                            */
+/* ------------------------------------------------------------------ */
+
+/** The ids this run has already finished (from a previous, killed run). */
+const resumedIds = new Set<string>();
+
+/** The progress file of THIS run. */
+let progress: ProgressFile = {
+  startedAt: new Date().toISOString(),
+  selected: selected.map((question) => question.id),
+  done: {},
+  spendUsd: 0,
+};
+
+/** The instant this run started, on the DATABASE clock. */
+let runStart = new Date();
+
+/**
+ * Load a previous run's progress.
+ *
+ * The selection has to match: resuming a different selection would silently
+ * skip questions that were never asked. When it does not match, the file is
+ * ignored and the run starts from scratch.
+ */
+function loadProgress(): void {
+  const previous = readProgress();
+  if (!previous) return;
+  const wanted = new Set(selected.map((question) => question.id));
+  const sameSelection =
+    previous.selected.length === wanted.size &&
+    previous.selected.every((id) => wanted.has(id));
+  if (!sameSelection) {
+    if (!options.json) {
+      console.log(
+        "[eval] the saved progress is for a different selection - ignoring it.",
+      );
+    }
+    return;
+  }
+  for (const id of previous.selected) {
+    if (previous.done[id]) resumedIds.add(id);
+  }
+  if (!options.json && resumedIds.size > 0) {
+    console.log(
+      `[eval] resuming: ${resumedIds.size} question(s) already done, ` +
+        `${selected.length - resumedIds.size} to go.`,
+    );
+  }
+}
+
+if (options.resume) {
+  loadProgress();
+}
+
+if (options.dryRun) {
+  if (options.resume && resumedIds.size > 0) {
+    selected = selected.filter((question) => !resumedIds.has(question.id));
+  }
+  dryRun();
+}
+
+/* ------------------------------------------------------------------ */
+/* The DB clock                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The start of this run, on the database clock.
+ *
+ * `answer_log.created_at` is stamped by Postgres, so the filter that
+ * selects "the rows THIS run wrote" has to use the same clock. Using the
+ * script's clock would let a skew hide a real cost row.
+ */
+async function readRunStart(): Promise<Date> {
+  const db = await getPool();
+  if (!db) return new Date();
+  try {
+    const result = (await db.query("SELECT now() AS now")) as {
+      rows: Array<{ now: Date | string }>;
+    };
+    const value = result.rows[0]?.now;
+    if (value instanceof Date) return value;
+    if (typeof value === "string") return new Date(value);
+    return new Date();
+  } catch {
+    return new Date();
+  }
+}
+
+runStart = await readRunStart();
+
+if (!options.json) {
+  console.log(
+    `[eval] ${selected.length} question(s) against ${options.url} ` +
+      `(concurrency ${options.concurrency})`,
+  );
+  console.log(
+    `[eval] spend ceiling $${options.maxSpendUsd.toFixed(2)} | ` +
+      `estimated max $${(
+        selected.length * MEASURED_COST_PER_ANSWER_USD * ESTIMATE_SAFETY_MARGIN
+      ).toFixed(6)} | running spend $0.0000 / $${options.maxSpendUsd.toFixed(2)}`,
+  );
+  console.log("[eval] this calls the model. It costs money.");
+}
+
+/** The questions this run still has to ask. */
+const pending = selected.filter((question) => !resumedIds.has(question.id));
+
 async function runOne(
   question: GoldenQuestion,
   index: number,
 ): Promise<void> {
   const response = await askChat(question.question, index);
-  const cost = await readCost(question.question);
+  const cost = response.cacheHit
+    ? null
+    : await readCost(question.question, runStart);
   const result = evaluate(question, response, cost);
   results.push(result);
   recordSpend(cost?.cost_usd ?? 0);
+  progress.done[question.id] = {
+    pass: result.pass,
+    costUsd: cost?.cost_usd ?? 0,
+    at: new Date().toISOString(),
+  };
+  progress.spendUsd = spendUsd;
+  writeProgress(progress);
   if (!options.json) {
-    const costText = cost
-      ? `$${cost.cost_usd.toFixed(6)}`
-      : "(no cost row)";
+    const costText = response.cacheHit
+      ? "$0.000000 (cache hit)"
+      : cost
+        ? `$${cost.cost_usd.toFixed(6)}`
+        : "(no cost row)";
     console.log(
       `  ${result.pass ? "PASS" : "FAIL"} ${result.id} [${result.bucket}] ` +
         `${response.latencyMs}ms ${costText} vis=${result.visual?.visual?.kind ?? "-"} ` +
-        `conf=${result.confidence} spend=$${spendUsd.toFixed(4)}/${options.maxSpendUsd}`,
+        `conf=${result.confidence} spend=$${spendUsd.toFixed(4)}/${options.maxSpendUsd.toFixed(2)}`,
     );
     if (!result.pass) {
       for (const check of result.checks) {
@@ -759,8 +1047,8 @@ async function worker(): Promise<void> {
     }
     const index = cursor;
     cursor += 1;
-    if (index >= selected.length) return;
-    const question = selected[index];
+    if (index >= pending.length) return;
+    const question = pending[index];
     if (!question) return;
     counter += 1;
     await runOne(question, counter);
@@ -768,7 +1056,7 @@ async function worker(): Promise<void> {
 }
 
 await Promise.all(
-  Array.from({ length: Math.min(CONCURRENCY, selected.length) }, () => worker()),
+  Array.from({ length: Math.min(CONCURRENCY, pending.length) }, () => worker()),
 );
 
 await closeEvalPool();
@@ -784,6 +1072,11 @@ const totalCompletion = results.reduce(
   (sum, result) => sum + result.completionTokens,
   0,
 );
+
+/** How many answers the route served from its cache: $0 each. */
+const cacheHitCount = results.filter((result) => result.cached).length;
+/** How many answers actually reached the model. */
+const coldCount = results.length - cacheHitCount;
 
 const byBucket = new Map<string, { total: number; passed: number }>();
 for (const result of results) {
@@ -874,6 +1167,19 @@ const report = {
   overallPassRate,
   totalCostUsd: totalCost,
   costPerQuestionUsd: results.length === 0 ? 0 : totalCost / results.length,
+  /** How many answers came from the route's answer cache (free). */
+  cacheHitAnswers: cacheHitCount,
+  /** How many answers reached the model. */
+  coldAnswers: coldCount,
+  /** The cost of ONE cold answer, for comparison. */
+  costPerColdAnswerUsd:
+    coldCount === 0 ? 0 : totalCost / coldCount,
+  /** The spend ceiling this run was held to. */
+  maxSpendUsd: options.maxSpendUsd,
+  /** True when the ceiling stopped the run. */
+  budgetExhausted,
+  /** How many questions were skipped because a previous run did them. */
+  resumedFromPreviousRun: resumedIds.size,
   tokens: {
     cacheHit: totalHit,
     cacheMiss: totalMiss,

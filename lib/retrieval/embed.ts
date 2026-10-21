@@ -27,6 +27,7 @@
  * runtime, which has no business in a browser bundle.
  */
 
+import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -48,6 +49,32 @@ export const EMBEDDING_DTYPE = "q8";
 export const MODEL_CACHE_DIR =
   process.env.KAUSTUBH_MODEL_CACHE_DIR ??
   path.join(os.tmpdir(), "kaustubh-portfolio-models");
+
+/**
+ * Where the model is bundled in the deployment.
+ *
+ * The model is 22.6 MB on disk, which is small enough to ship with the
+ * application. That matters more than it looks: on a serverless host the
+ * Hugging Face CDN is not always reachable, and a cold instance that cannot
+ * download the model cannot answer from the source code at all - it falls
+ * back to the claim ledger, which is a much weaker portfolio.
+ *
+ * Bundling the weights removes the network dependency and the ~12 second
+ * cold-start download. The CDN stays as a fallback for a local checkout
+ * that does not have the folder.
+ */
+export const BUNDLED_MODEL_DIR = path.join(
+  process.cwd(),
+  "models",
+  "all-MiniLM-L6-v2",
+);
+
+/** True when the bundled model is present on disk. */
+export function hasBundledModel(): boolean {
+  return existsSync(
+    path.join(BUNDLED_MODEL_DIR, "onnx", "model_quantized.onnx"),
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Errors                                                              */
@@ -97,11 +124,21 @@ async function loadExtractor(): Promise<Extractor> {
   // until it is actually needed.
   const { pipeline, env } = await import("@huggingface/transformers");
 
-  // The model is fetched from the Hugging Face CDN and cached on disk; it is
-  // never executed from a local path.
-  env.allowLocalModels = false;
-  env.allowRemoteModels = true;
-  env.cacheDir = MODEL_CACHE_DIR;
+  const bundled = hasBundledModel();
+
+  if (bundled) {
+    // The weights ship with the deployment: no network, no cold-start
+    // download, and the serverless instance can answer immediately.
+    env.allowLocalModels = true;
+    env.allowRemoteModels = false;
+    env.localModelPath = BUNDLED_MODEL_DIR;
+    env.cacheDir = MODEL_CACHE_DIR;
+  } else {
+    // A local checkout without the bundled folder falls back to the CDN.
+    env.allowLocalModels = false;
+    env.allowRemoteModels = true;
+    env.cacheDir = MODEL_CACHE_DIR;
+  }
 
   const extractor = await pipeline("feature-extraction", EMBEDDING_MODEL, {
     dtype: EMBEDDING_DTYPE,
