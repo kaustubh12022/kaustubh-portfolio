@@ -7,14 +7,6 @@ export type DemoContext = {
   claims: Claim[];
 };
 
-function project(context: DemoContext, id: string) {
-  return context.projects.find((item) => item.id === id);
-}
-
-function projectName(context: DemoContext, id: string) {
-  return project(context, id)?.name ?? id;
-}
-
 export function buildDemoAnswer(
   rawInput: string,
   context: DemoContext,

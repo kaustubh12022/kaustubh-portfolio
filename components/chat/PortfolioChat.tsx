@@ -138,7 +138,6 @@ function replaceWithDemo(
 export function PortfolioChat({
   profile,
   projects,
-  featured,
   claims,
   architectures,
 }: PortfolioChatProps) {

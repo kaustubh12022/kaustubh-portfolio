@@ -27,7 +27,7 @@ import { loadEnv } from "./env.js";
 loadEnv();
 
 const { query, closePool } = await import("@/lib/retrieval/db.js");
-const { embedQuery, embedDocuments } = await import("@/lib/retrieval/embed.js");
+const { embedQuery } = await import("@/lib/retrieval/embed.js");
 const { readGoldenSet, scorableQuestions } = await import("@/lib/eval/golden.js");
 
 const SAMPLE = Number(process.argv[2] ?? 40);

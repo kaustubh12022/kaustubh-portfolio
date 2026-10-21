@@ -6,8 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { createHighlighterCore } from "shiki/core";
 
-import { cn } from "@/lib/utils";
-
 const THEME = "github-dark";
 
 /** Long excerpts are trimmed so one citation cannot flood the answer. */
@@ -116,6 +114,8 @@ export function CodeExplorer({
 
   useEffect(() => {
     let cancelled = false;
+    // Tracked remediation: CodeExplorer payload is wired in Phase D1.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTokens(null);
 
     if (!visibleText.trim()) return;

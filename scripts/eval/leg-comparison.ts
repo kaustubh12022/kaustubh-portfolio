@@ -185,7 +185,6 @@ for (const depth of CANDIDATE_DEPTHS) {
 
   for (const policy of policies) {
     const bucket = scores.get(policy.name)!;
-    const count = bucket.length / 5;
     // The bucket holds five values PER QUESTION, in the order
     // [recall@5, recall@10, MRR@10, hit@10, nDCG@10]. A metric is therefore
     // every fifth element, NOT a contiguous slice.

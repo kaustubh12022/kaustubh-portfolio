@@ -436,7 +436,7 @@ interface AnswerLogRow {
 
 const DEEPSEEK_RATES = { cacheHit: 0.003, cacheMiss: 0.15, completion: 0.6 };
 
-let pool: { query: Function; end: () => Promise<void> } | null = null;
+let pool: { query: (...args: unknown[]) => Promise<unknown>; end: () => Promise<void> } | null = null;
 
 async function getPool() {
   if (pool) return pool;
@@ -924,7 +924,7 @@ function dryRun(): void {
 const resumedIds = new Set<string>();
 
 /** The progress file of THIS run. */
-let progress: ProgressFile = {
+const progress: ProgressFile = {
   startedAt: new Date().toISOString(),
   selected: selected.map((question) => question.id),
   done: {},
