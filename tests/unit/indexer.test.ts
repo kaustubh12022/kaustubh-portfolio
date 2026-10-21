@@ -19,7 +19,7 @@ import {
 } from "@/scripts/index/chunker";
 import { buildHeader, extractImports } from "@/scripts/index/header";
 import { chunkKey, contentHash } from "@/scripts/index/hash";
-import { upsertChunks } from "@/scripts/index/index";
+import { pruneStaleChunks, upsertChunks } from "@/scripts/index/index";
 import { PROJECTS, getProject, repoName } from "@/scripts/index/projects";
 import { redactOwnerPii, scanContent } from "@/scripts/index/scan";
 
@@ -573,6 +573,41 @@ describe("upsertChunks", () => {
       },
     };
     expect(await upsertChunks([], fakeDb)).toBe(0);
+    expect(called).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* prune stale chunks                                                  */
+/* ------------------------------------------------------------------ */
+
+describe("pruneStaleChunks", () => {
+  it("deletes chunks not matching the valid content hashes", async () => {
+    const calls: { text: string; values?: unknown[] }[] = [];
+    const fakeDb = {
+      async query(text: string, values?: unknown[]) {
+        calls.push({ text, values });
+        return { rowCount: 5 };
+      },
+    };
+
+    const pruned = await pruneStaleChunks("pawna", ["hash1", "hash2"], fakeDb);
+    expect(pruned).toBe(5);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].text).toContain("DELETE FROM chunks WHERE project_id = $1");
+    expect(calls[0].text).toContain("NOT (content_hash = ANY($2::text[]))");
+    expect(calls[0].values).toEqual(["pawna", ["hash1", "hash2"]]);
+  });
+
+  it("does nothing when valid content hashes array is empty", async () => {
+    let called = false;
+    const fakeDb = {
+      async query() {
+        called = true;
+        return { rowCount: 0 };
+      },
+    };
+    expect(await pruneStaleChunks("pawna", [], fakeDb)).toBe(0);
     expect(called).toBe(false);
   });
 });

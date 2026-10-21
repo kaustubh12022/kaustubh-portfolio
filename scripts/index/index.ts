@@ -130,8 +130,8 @@ export async function upsertManifest(
        indexed_at = now(),
        file_count = EXCLUDED.file_count,
        chunk_count = EXCLUDED.chunk_count,
-       embedding_model = EXCLUDED.embedding_model,
-       embedding_dim = EXCLUDED.embedding_dim,
+       embedding_model = CASE WHEN EXCLUDED.embedding_model <> '' THEN EXCLUDED.embedding_model ELSE index_manifest.embedding_model END,
+       embedding_dim = CASE WHEN EXCLUDED.embedding_dim <> 0 THEN EXCLUDED.embedding_dim ELSE index_manifest.embedding_dim END,
        content_hash = EXCLUDED.content_hash`,
     [
       stats.id,
@@ -144,6 +144,20 @@ export async function upsertManifest(
       contentHash([stats.repoSha, String(stats.chunksProduced)]),
     ],
   );
+}
+
+/** Remove chunks for a project that are no longer part of the corpus. */
+export async function pruneStaleChunks(
+  projectId: string,
+  validContentHashes: string[],
+  db: Queryable,
+): Promise<number> {
+  if (validContentHashes.length === 0) return 0;
+  const result = await db.query(
+    `DELETE FROM chunks WHERE project_id = $1 AND NOT (content_hash = ANY($2::text[]))`,
+    [projectId, validContentHashes],
+  );
+  return result.rowCount ?? 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -166,11 +180,23 @@ function makeReader(redactPii: boolean): (absolutePath: string) => string {
   };
 }
 
+/** Load `.env.local` when the environment does not already have a URL. */
+function loadLocalEnv(): void {
+  if (process.env.DATABASE_URL) return;
+  const envFile = path.join(process.cwd(), ".env.local");
+  try {
+    process.loadEnvFile(envFile);
+  } catch {
+    // No .env.local: the environment must provide the URL.
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 
 async function main(): Promise<void> {
+  loadLocalEnv();
   const options = parseArgs(process.argv.slice(2));
 
   if (options.project && !getProject(options.project)) {
@@ -386,8 +412,14 @@ async function main(): Promise<void> {
         if (stats.status !== "indexed") continue;
         const projectChunks = allChunks.filter((c) => c.projectId === stats.id);
         const written = await upsertChunks(projectChunks, pool);
+        const pruned = await pruneStaleChunks(
+          stats.id,
+          projectChunks.map((c) => c.contentHash),
+          pool,
+        );
         await upsertManifest(stats, pool);
-        console.log(`  ${stats.id}: ${written} chunks upserted`);
+        const prunedMsg = pruned > 0 ? `, ${pruned} stale chunks pruned` : "";
+        console.log(`  ${stats.id}: ${written} chunks upserted${prunedMsg}`);
       }
     } finally {
       await (pool as unknown as { end?: () => Promise<void> }).end?.();
