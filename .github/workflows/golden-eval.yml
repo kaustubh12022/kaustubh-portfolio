@@ -1,0 +1,119 @@
+# =============================================================================
+# The answer benchmark. MANUAL ONLY.
+#
+# This workflow calls DeepSeek, so it costs REAL MONEY and it is NOT part of
+# the automatic pipeline. It exists so that the published answer benchmark
+# can be reproduced on demand, with a hard budget.
+#
+# WHAT IT NEEDS
+# -------------
+#   DEEPSEEK_API_KEY   the model key
+#   DATABASE_URL       the Neon pooler URL (the benchmark reads the cost of
+#                      every answer back from `answer_log`, and it checks the
+#                      answer against the live index)
+#
+# Both are repository secrets. The job fails if they are missing rather than
+# spending money against a wrong account.
+#
+# THE BUDGET
+# ----------
+# `--max-spend 0.05` caps the run at five cents, which is about a 50 question
+# slice. The script stops the moment the spend crosses the ceiling, so the
+# cap is enforced by the harness and not only by this file.
+#
+# THE EXIT CODE IS THE GATE
+# -------------------------
+# `scripts/eval/golden-eval.ts` exits non-zero when the pass rate is below
+# the published gate (85%, overridable with `GOLDEN_MIN_PASS_RATE`). The
+# measured rate at the time of writing is 53.3% on the full 150 question run,
+# so this workflow is EXPECTED TO BE RED until the retrieval work lands. That
+# is the point of a gate: it says what is still missing.
+# =============================================================================
+name: Golden eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      questions:
+        description: "Comma separated golden ids, e.g. q001,q002. Empty = the whole set."
+        required: false
+        default: ""
+      max_spend:
+        description: "The hard spend ceiling for this run, in USD."
+        required: false
+        default: "0.05"
+      min_pass_rate:
+        description: "The pass rate the run has to clear. Empty = the published gate (0.85)."
+        required: false
+        default: ""
+
+jobs:
+  golden-eval:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the dependencies
+        run: npm ci
+
+      - name: Check the secrets
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "::error::DEEPSEEK_API_KEY is not set - refusing to run the benchmark."
+            exit 1
+          fi
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set - the benchmark reads the cost back from answer_log."
+            exit 1
+          fi
+
+      - name: Start the dev server
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          MCP_AUTH_TOKEN: ${{ secrets.MCP_AUTH_TOKEN }}
+          DAILY_SPEND_CEILING_USD: "0.05"
+        run: |
+          npm run dev -- --port 3000 &
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "dev server is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::the dev server did not come up in 180 s"
+          exit 1
+
+      - name: Run the answer benchmark
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          GOLDEN_MIN_PASS_RATE: ${{ inputs.min_pass_rate }}
+        run: |
+          ARGS="--max-spend=${{ inputs.max_spend }} --out=evals/.golden-run.json"
+          if [ -n "${{ inputs.questions }}" ]; then
+            ARGS="$ARGS --questions=${{ inputs.questions }}"
+          fi
+          npx tsx scripts/eval/golden-eval.ts $ARGS
+
+      - name: Publish the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-eval-report
+          path: evals/.golden-run.json
+          if-no-files-found: warn

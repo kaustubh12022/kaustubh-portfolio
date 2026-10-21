@@ -13,6 +13,7 @@ import {
   MetricSchema,
   ProfileSchema,
   ProjectSchema,
+  type Architecture,
   type Profile,
 } from "./schemas";
 
@@ -93,4 +94,37 @@ export const getArchitecture = cache((id: string) => {
     join(CONTENT_ROOT, "architecture", `${id}.json`),
     ArchitectureSchema,
   );
+});
+
+/**
+ * Every captured architecture, keyed by project id.
+ *
+ * WHY EVERY PROJECT AND NOT ONLY THE FEATURED ONES
+ * -------------------------------------------------
+ * The chat answers questions about ANY project in the content layer, not
+ * only the three on the landing page. Loading the architectures only for
+ * the featured projects meant that asking about DayScore - which HAS a
+ * captured diagram - produced the message "the architecture diagram for
+ * that project is not captured yet". That is false, and a false "not
+ * captured" is worse than no answer, because it teaches the reader that
+ * the portfolio does not know things it does know.
+ *
+ * A file that does not parse is skipped rather than thrown: one broken
+ * diagram must not take the whole page down.
+ */
+export const getArchitectures = cache(() => {
+  const dir = join(CONTENT_ROOT, "architecture");
+  const architectures: Record<string, Architecture> = {};
+
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith(".json")) continue;
+    const id = file.replace(/\.json$/, "");
+    try {
+      architectures[id] = readJsonFile(join(dir, file), ArchitectureSchema);
+    } catch {
+      // A diagram that does not validate is simply not offered.
+    }
+  }
+
+  return architectures;
 });

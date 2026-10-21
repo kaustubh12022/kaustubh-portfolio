@@ -1,0 +1,565 @@
+{
+  "project": "pawna",
+  "generatedBy": "scripts/index/datamodel.ts",
+  "source": "The eight Mongoose models under backend/models/. Every field, required flag and `ref` is taken from the schema literal in the source file.",
+  "entities": [
+    {
+      "name": "BlockedDate",
+      "fields": [
+        {
+          "name": "property",
+          "type": "ObjectId",
+          "required": true,
+          "relation": "Property"
+        },
+        {
+          "name": "startDate",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "endDate",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "type": "String"
+        },
+        {
+          "name": "blockedBy",
+          "type": "ObjectId",
+          "required": true,
+          "relation": "User"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "BlockedDate",
+          "to": "Property",
+          "label": "property",
+          "kind": "1-n"
+        },
+        {
+          "from": "BlockedDate",
+          "to": "User",
+          "label": "blockedBy",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "fields": [
+        {
+          "name": "packageType",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "checkIn",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "checkOut",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "nights",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "guests",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "vegGuests",
+          "type": "Number"
+        },
+        {
+          "name": "nonVegGuests",
+          "type": "Number"
+        },
+        {
+          "name": "foodPreference",
+          "type": "String"
+        },
+        {
+          "name": "customerName",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "customerPhone",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "customerEmail",
+          "type": "String"
+        },
+        {
+          "name": "status",
+          "type": "String"
+        },
+        {
+          "name": "totalPrice",
+          "type": "Number"
+        },
+        {
+          "name": "addedBy",
+          "type": "ObjectId",
+          "relation": "User"
+        },
+        {
+          "name": "property",
+          "type": "ObjectId",
+          "relation": "Property"
+        },
+        {
+          "name": "propertyType",
+          "type": "String"
+        },
+        {
+          "name": "ownerResponse",
+          "type": "Object"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "Booking",
+          "to": "Property",
+          "label": "property",
+          "kind": "1-n"
+        },
+        {
+          "from": "Booking",
+          "to": "User",
+          "label": "addedBy",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "Package",
+      "fields": [
+        {
+          "name": "title",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "features",
+          "type": "String[]",
+          "required": true
+        },
+        {
+          "name": "price",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "weekdayPrice",
+          "type": "Number"
+        },
+        {
+          "name": "weekendPrice",
+          "type": "Number"
+        },
+        {
+          "name": "maxCapacity",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "image",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "property",
+          "type": "ObjectId",
+          "relation": "Property"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "Package",
+          "to": "Property",
+          "label": "property",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "Property",
+      "fields": [
+        {
+          "name": "name",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "slug",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "shortDescription",
+          "type": "String"
+        },
+        {
+          "name": "description",
+          "type": "String"
+        },
+        {
+          "name": "location",
+          "type": "String"
+        },
+        {
+          "name": "googleMapsLink",
+          "type": "String"
+        },
+        {
+          "name": "address",
+          "type": "String"
+        },
+        {
+          "name": "coverImage",
+          "type": "Object"
+        },
+        {
+          "name": "images",
+          "type": "Object[]"
+        },
+        {
+          "name": "amenities",
+          "type": "String[]"
+        },
+        {
+          "name": "pricing",
+          "type": "Object"
+        },
+        {
+          "name": "maxGuests",
+          "type": "Number"
+        },
+        {
+          "name": "checkInTime",
+          "type": "String"
+        },
+        {
+          "name": "checkOutTime",
+          "type": "String"
+        },
+        {
+          "name": "rules",
+          "type": "String[]"
+        },
+        {
+          "name": "whatsappNumber",
+          "type": "String"
+        },
+        {
+          "name": "owner",
+          "type": "ObjectId",
+          "relation": "User"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean"
+        },
+        {
+          "name": "createdBy",
+          "type": "ObjectId",
+          "relation": "User"
+        },
+        {
+          "name": "averageRating",
+          "type": "Number"
+        },
+        {
+          "name": "reviewCount",
+          "type": "Number"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "Property",
+          "to": "User",
+          "label": "createdBy",
+          "kind": "1-n"
+        },
+        {
+          "from": "Property",
+          "to": "User",
+          "label": "owner",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "Revenue",
+      "fields": [
+        {
+          "name": "property",
+          "type": "ObjectId",
+          "required": true,
+          "relation": "Property"
+        },
+        {
+          "name": "bookingRef",
+          "type": "ObjectId",
+          "relation": "Booking"
+        },
+        {
+          "name": "amount",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "commission",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "date",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "notes",
+          "type": "String"
+        },
+        {
+          "name": "addedBy",
+          "type": "ObjectId",
+          "required": true,
+          "relation": "User"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "Revenue",
+          "to": "Booking",
+          "label": "bookingRef",
+          "kind": "1-n"
+        },
+        {
+          "from": "Revenue",
+          "to": "Property",
+          "label": "property",
+          "kind": "1-n"
+        },
+        {
+          "from": "Revenue",
+          "to": "User",
+          "label": "addedBy",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "Review",
+      "fields": [
+        {
+          "name": "property",
+          "type": "ObjectId",
+          "required": true,
+          "relation": "Property"
+        },
+        {
+          "name": "reviewerName",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "reviewerEmail",
+          "type": "String"
+        },
+        {
+          "name": "reviewerPhone",
+          "type": "String"
+        },
+        {
+          "name": "rating",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "isApproved",
+          "type": "Boolean"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "Review",
+          "to": "Property",
+          "label": "property",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "SiteSettings",
+      "fields": [
+        {
+          "name": "whatsappNumber",
+          "type": "String"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "fields": [
+        {
+          "name": "name",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "role",
+          "type": "String"
+        },
+        {
+          "name": "properties",
+          "type": "ObjectId[]",
+          "relation": "Property"
+        },
+        {
+          "name": "phone",
+          "type": "String"
+        },
+        {
+          "name": "mustChangePassword",
+          "type": "Boolean"
+        },
+        {
+          "name": "lastSeenBookingAt",
+          "type": "Date"
+        },
+        {
+          "name": "pushSubscription",
+          "type": "Object"
+        },
+        {
+          "name": "createdAt",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "from": "User",
+          "to": "Property",
+          "label": "properties",
+          "kind": "n-n"
+        }
+      ]
+    }
+  ]
+}

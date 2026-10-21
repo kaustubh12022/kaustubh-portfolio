@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/GoogleChrome/lighthouse-ci/main/docs/schema/lighthouserc.schema.json",
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/projects/smartapply"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "chromeFlags": "--no-sandbox --headless=new",
+        "onlyCategories": ["performance", "accessibility", "best-practices", "seo"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.95 }],
+        "categories:accessibility": ["error", { "minScore": 1.0 }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.05 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 300 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": "./.lighthouseci"
+    }
+  }
+}

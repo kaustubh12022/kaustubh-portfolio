@@ -41,40 +41,6 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   dockerfile: "docker",
 };
 
-const PATH_LANGUAGES: Record<string, string> = {
-  ".py": "python",
-  ".js": "javascript",
-  ".mjs": "javascript",
-  ".cjs": "javascript",
-  ".jsx": "jsx",
-  ".ts": "typescript",
-  ".tsx": "tsx",
-  ".java": "java",
-  ".sql": "sql",
-  ".html": "html",
-  ".htm": "html",
-  ".css": "css",
-  ".scss": "scss",
-  ".dart": "dart",
-  ".yaml": "yaml",
-  ".yml": "yaml",
-  ".json": "json",
-  ".md": "markdown",
-  ".sh": "bash",
-  ".go": "go",
-  ".rs": "rust",
-  ".rb": "ruby",
-  ".php": "php",
-};
-
-/** Best-effort language id for a file path, used when the spec omits one. */
-export function inferLanguage(path: string) {
-  const match = path.match(/\.([a-z0-9]+)$/i);
-  if (!match) return "text";
-  const extension = `.${match[1].toLowerCase()}`;
-  return PATH_LANGUAGES[extension] ?? match[1].toLowerCase();
-}
-
 function normalizeLanguage(language: string) {
   const key = (language ?? "").trim().toLowerCase();
   return LANGUAGE_ALIASES[key] ?? key;

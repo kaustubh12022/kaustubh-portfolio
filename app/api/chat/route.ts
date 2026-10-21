@@ -49,6 +49,7 @@ import {
   validateEvidence,
 } from "@/lib/ai/citations";
 import { cacheKey, readCache, writeCache } from "@/lib/ai/cache";
+import { indexFingerprint } from "@/lib/retrieval/search";
 import { computeCost, logAnswer, readTokenUsage } from "@/lib/ai/cost";
 import { getProjects } from "@/lib/content/load";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
@@ -60,6 +61,7 @@ import {
   RATE_LIMIT_MAX,
 } from "@/lib/ai/ratelimit";
 import {
+  attachVisualPayload,
   createToolState,
   createTools,
   type ToolState,
@@ -367,6 +369,7 @@ export async function POST(request: Request): Promise<Response> {
       role: message.role,
       text: message.text,
     })),
+    await indexFingerprint(),
   );
   const cached = readCache(cacheId);
   const replay = cached ? replayCachedAnswer(cached) : null;
@@ -743,6 +746,16 @@ function wasServed(state: ToolState, ref: EvidenceRef): boolean {
  * The citations the model asked for are re-read from the index. One that
  * does not resolve is dropped, the confidence is downgraded, and the reader
  * is told how many were dropped.
+ *
+ * THE VISUAL IS RESOLVED LAST
+ * ---------------------------
+ * The model only chooses the kind and the identifiers. The server then
+ * attaches the fields the model is not allowed to write: the real source
+ * text for a `code` visual (read out of the index), the real entities for a
+ * `data-model` visual (read out of the captured content layer) and the real
+ * rows for a `metrics` visual (read out of `content/metrics.yaml`). A model
+ * that tried to write those fields itself had them stripped before this
+ * point, so nothing it wrote can reach the screen.
  */
 async function buildPayload(
   state: ToolState,
@@ -750,10 +763,30 @@ async function buildPayload(
 ): Promise<VisualPayload> {
   const declaration = state.declaration;
 
-  const visual = (declaration?.spec ??
+  const declared = (declaration?.spec ??
     deriveFallbackVisual(state)) as VisualSpec | null;
 
+  const visual = declared ? await attachVisualPayload(declared) : null;
+
   const caveats: string[] = [...(declaration?.caveats ?? [])];
+
+  if (declared && !visual) {
+    caveats.push(
+      "The visual this answer asked for could not be resolved into a valid card, so no visual is shown.",
+    );
+  }
+
+  if (visual?.kind === "code" && !visual.code) {
+    caveats.push(
+      `The source for ${visual.path}:${visual.startLine}-${visual.endLine} was not found in the indexed source, so the code card shows no text rather than something invented.`,
+    );
+  }
+
+  if (visual?.kind === "data-model" && !visual.entities?.length) {
+    caveats.push(
+      `No data model was captured for "${visual.projectId}", so the card shows an empty frame instead of invented tables.`,
+    );
+  }
 
   let confidence: "high" | "medium" | "low" = declaration?.confidence ?? "low";
   let evidence: VisualPayload["evidence"] = [];

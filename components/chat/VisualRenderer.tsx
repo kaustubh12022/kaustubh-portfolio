@@ -1,7 +1,7 @@
 "use client";
 
 import { ArchitectureDiagram } from "@/components/visuals/ArchitectureDiagram";
-import { CodeExplorer, inferLanguage } from "@/components/visuals/CodeExplorer";
+import { CodeExplorer } from "@/components/visuals/CodeExplorer";
 import { ComparisonCards } from "@/components/visuals/ComparisonCards";
 import { ContactCard } from "@/components/visuals/ContactCard";
 import { DataModelDiagram } from "@/components/visuals/DataModelDiagram";
@@ -14,7 +14,7 @@ import { ProjectShowcase } from "@/components/visuals/ProjectShowcase";
 import { SkillMap } from "@/components/visuals/SkillMap";
 import { UnknownCard } from "@/components/visuals/UnknownCard";
 import type { Architecture, Claim, Profile, Project } from "@/lib/content/schemas";
-import type { ComparisonRow, MetricRow, VisualSpec } from "@/lib/types/chat";
+import { inferLanguage, type ComparisonRow, type VisualSpec } from "@/lib/types/chat";
 
 type VisualRendererProps = {
   spec: VisualSpec;
@@ -25,6 +25,13 @@ type VisualRendererProps = {
   onAsk: (question: string) => void;
 };
 
+/**
+ * The comparison rows, derived from the verified project index.
+ *
+ * The server normally attaches the rows itself (see `attachComparisonRows`),
+ * so this is the fallback for a spec that reached the client without them.
+ * It reads the same verified content, so it cannot invent a project.
+ */
 function comparisonRows(projects: Project[], projectIds: string[]): ComparisonRow[] {
   return projectIds
     .map((id) => projects.find((item) => item.id === id))
@@ -43,26 +50,6 @@ function comparisonRows(projects: Project[], projectIds: string[]): ComparisonRo
       caveats: project.caveats,
       summary: project.summary,
     }));
-}
-
-function projectMetricRows(
-  projects: Project[],
-  projectId: string | undefined,
-): MetricRow[] {
-  if (!projectId) return [];
-  const project = projects.find((item) => item.id === projectId);
-  if (!project?.metrics.length) return [];
-
-  return project.metrics.map((metric) => ({
-    label: metric.label,
-    value: metric.value,
-    method:
-      "Not recorded in the project file. The method and source live in content/metrics.yaml.",
-    source: `content/projects/${project.id}.yaml`,
-    verifiedAt: /^\d{4}-\d{2}-\d{2}$/.test(metric.note ?? "")
-      ? (metric.note as string)
-      : "not recorded",
-  }));
 }
 
 export function VisualRenderer({
@@ -128,6 +115,9 @@ export function VisualRenderer({
   }
 
   if (spec.kind === "data-model") {
+    // `entities` is attached by the server from the captured data model
+    // (`content/datamodel/<projectId>.json`). When nothing was captured the
+    // diagram renders its honest empty frame instead of invented tables.
     return (
       <DataModelDiagram
         entities={spec.entities ?? []}
@@ -137,6 +127,10 @@ export function VisualRenderer({
   }
 
   if (spec.kind === "code") {
+    // `code` and `language` are attached by the server, which re-reads the
+    // range out of the source index. The model never supplies them, so a
+    // prompt injection cannot put arbitrary text into the viewer. When the
+    // range does not resolve, `code` is absent and the card says so.
     return (
       <CodeExplorer
         projectId={spec.projectId}
@@ -160,7 +154,13 @@ export function VisualRenderer({
   }
 
   if (spec.kind === "metrics") {
-    const rows = spec.rows ?? projectMetricRows(projects, spec.projectId);
+    // The rows are attached by the server from `content/metrics.yaml`, the
+    // only file that records the method, the source and the date of every
+    // number. There is deliberately no client-side fallback: a project file
+    // carries a label and a value but no provenance, so a number without
+    // one cannot be shown in a panel that claims the source is
+    // `metrics.yaml`.
+    const rows = spec.rows ?? [];
 
     if (!rows.length) {
       return <UnknownCard reason="No verified metric is recorded for that project yet." />;

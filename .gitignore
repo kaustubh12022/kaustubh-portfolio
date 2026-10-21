@@ -21,6 +21,7 @@ coverage/
 playwright-report/
 test-results/
 blob-report/
+.lighthouseci/
 promptfoo/.cache/
 promptfoo/output/
 *.tsbuildinfo
@@ -40,12 +41,39 @@ public/media/**/*.mov
 # local index artifacts
 data/
 
+# generated evaluation artifacts.
+#
+# These are OUTPUT, not source: the golden slice, the last answer-run summary
+# and the last retrieval report are rewritten by every evaluation run and
+# every one of them changes. Committing them means the repository carries a
+# number that no longer matches the code that produced it.
+#
+#   evals/.golden-slice.json   the 20-question answer slice
+#   evals/.golden-slice.txt    the same slice, printed
+#   evals/.last-run.json       the summary of the last answer run
+#   evals/.retrieval-last.txt  the report of the last retrieval run
+evals/.golden-slice.*
+evals/.last-run.json
+evals/.retrieval-last.txt
+
+# the benchmark's query-embedding cache (regenerated on demand)
+data/bench-embeddings.json
+
+# the LangChain side-lab's Python environment (recreate with
+# `python -m venv labs/langchain/.venv`)
+labs/**/.venv/
+**/__pycache__/
+*.pyc
+
 # local dev server logs
 .dev.log
 .dev.err
 .vercel
 .env*
 
-# NOTE: models/all-MiniLM-L6-v2 IS committed on purpose (22.6 MB).
-# The embedding model is bundled so a serverless cold start does not depend
-# on reaching the Hugging Face CDN. Do not add it to this file.
+# NOTE: the models under models/ ARE committed on purpose.
+#   models/Xenova/all-MiniLM-L6-v2        22.6 MB - the bi-encoder
+#   models/Xenova/ms-marco-MiniLM-L-6-v2   23.0 MB - the cross-encoder
+# They are bundled so a serverless cold start does not depend on reaching
+# the Hugging Face CDN, and so the retrieval layer costs $0.00 per query.
+# Do not add them to this file.

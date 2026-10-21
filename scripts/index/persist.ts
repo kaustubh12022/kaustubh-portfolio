@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * Embed the indexed corpus and persist the vectors.
  *
@@ -184,6 +184,41 @@ export function embeddingText(chunk: Chunk): string {
  * the same embedding model keeps its existing vector instead of being
  * embedded again. That is what makes a re-index of a single project cheap.
  */
+/**
+ * Delete the chunks of a project that are no longer in the index.
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * The conflict key of the chunks table is
+ * `(project_id, path, start_line, end_line, content_hash)`. When a function
+ * changes, its content hash changes, so the new version is INSERTED and the
+ * old row SURVIVES - two overlapping chunks for the same path and lines, the
+ * stale one still carrying a live vector and still being returned by every
+ * retrieval leg.
+ *
+ * The corpus was clean because every project had been indexed exactly once.
+ * The first commit that changes a file starts accumulating orphans, and
+ * nothing would ever notice, because the orphan looks exactly like a real
+ * chunk to the retriever.
+ *
+ * The prune is per project and only runs for the project that was just
+ * indexed, so it can never remove another project's data.
+ */
+export async function pruneStaleChunks(
+  db: { query: (sql: string, values?: unknown[]) => Promise<{ rowCount: number | null }> },
+  projectId: string,
+  liveHashes: string[],
+): Promise<number> {
+  if (liveHashes.length === 0) return 0;
+  const result = await db.query(
+    `DELETE FROM chunks
+      WHERE project_id = $1
+        AND NOT (content_hash = ANY($2::text[]))`,
+    [projectId, liveHashes],
+  );
+  return result.rowCount ?? 0;
+}
+
 export async function embedAndPersist(
   chunks: Chunk[],
   options: PersistOptions,
@@ -523,11 +558,33 @@ async function main(): Promise<void> {
 
     await stampManifest(pool, manifest, result.model, result.dim);
 
+    // ---- 5. prune the chunks that are no longer in the index -------------
+    //
+    // A changed file produces a new content hash, so the old row survives
+    // the upsert. Left alone, the corpus grows a second, stale copy of
+    // every file that ever changed, and the retriever keeps returning it.
+    const byProject = new Map<string, string[]>();
+    for (const chunk of chunks) {
+      const project = chunk.projectId;
+      const list = byProject.get(project) ?? [];
+      list.push(chunk.contentHash);
+      byProject.set(project, list);
+    }
+    let pruned = 0;
+    for (const [projectId, hashes] of byProject) {
+      const removed = await pruneStaleChunks(pool, projectId, hashes);
+      pruned += removed;
+      if (removed > 0) {
+        console.log(`pruned        : ${removed} stale chunks from ${projectId}`);
+      }
+    }
+
     console.log("");
     console.log("SUMMARY");
     console.log("=".repeat(78));
     console.log(`model         : ${result.model} (${result.dim} dims)`);
     console.log(`chunks        : ${result.total}`);
+    console.log(`pruned        : ${pruned} stale chunks`);
     console.log(`embedded      : ${result.embedded} (${result.batches} batches)`);
     console.log(`reused        : ${result.reused}`);
     console.log(`rows written  : ${result.rowsWritten}`);
@@ -549,3 +606,4 @@ if (invokedDirectly) {
 }
 
 export { main };
+

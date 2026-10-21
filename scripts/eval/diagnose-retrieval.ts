@@ -13,6 +13,29 @@
  * with its own text. If the chunk cannot find ITSELF, the stored embedding
  * is stale or wrong - that is the bug.
  *
+ * READ THE "NOT IN THE INDEX AT ALL" COUNT WITH CARE
+ * --------------------------------------------------
+ * This script reports a chunk as "not in the index at all" when the index
+ * does not CONTAIN the expected range: it requires
+ *
+ *     start_line <= expected_start AND end_line >= expected_end
+ *
+ * The benchmark (`scripts/eval/retrieval-eval.ts`) and the metrics module
+ * (`lib/eval/metrics.ts`) use OVERLAP instead: a chunk counts as relevant when
+ * it intersects the expected range at all.
+ *
+ * The two disagree, and the diagnostic is the stricter of the two. The
+ * indexer splits a long function across several chunks, so the expected
+ * range is usually a UNION of chunks and no single chunk contains it. The
+ * result is a "not in the index at all" count that is far too high - on
+ * 2026-10-21 it said 47 of 118 while `audit-golden-ranges.ts` (which uses
+ * overlap plus union coverage) said 118/118 ok. The corpus was complete;
+ * the diagnostic was too strict.
+ *
+ * So: use this script to see WHERE a chunk ended up in each leg. Do NOT
+ * read its "not in the index at all" number as a corpus-health figure. For
+ * that, use `scripts/eval/audit-golden-ranges.ts` or the benchmark.
+ *
  * NO LLM CALL.
  */
 

@@ -34,8 +34,15 @@ import "server-only";
  * stale answer can never outlive the code it described.
  */
 
-/** How long a cached answer stays valid. */
-const TTL_MS = 15 * 60 * 1000;
+/**
+ * How long a cached answer stays valid.
+ *
+ * 24 hours, not 15 minutes. A recruiter asking "what is your stack?" at
+ * 10am and another asking the same at 4pm should get the same answer, and
+ * the answer does not change because a day passed. The corpus only changes
+ * when the code is re-indexed, and THAT is what invalidates the cache.
+ */
+const TTL_MS = 24 * 60 * 60 * 1000;
 
 /** The most entries kept. Beyond this the oldest are dropped. */
 const MAX_ENTRIES = 500;
@@ -77,17 +84,23 @@ export function currentCacheGeneration(): number {
  * question ("and what about the caching?") only makes sense in the context
  * of the turn before it. Normalising the whitespace keeps "How does X work?"
  * and "How  does X work?" on the same entry.
+ *
+ * The INDEX FINGERPRINT is part of the key. When the corpus is re-indexed
+ * the fingerprint changes, so every answer that was computed against the old
+ * corpus becomes unreachable. That is what stops a cached answer from
+ * outliving the code it described.
  */
 export function cacheKey(
   question: string,
   history: Array<{ role: string; text: string }>,
+  fingerprint = "0",
 ): string {
   const recent = history
     .slice(-4)
     .map((message) => `${message.role}:${message.text.trim()}`)
     .join("|");
   const normalized = `${recent}||${question.trim().replace(/\s+/g, " ")}`;
-  return `${generation}:${normalized.toLowerCase()}`;
+  return `${generation}:${fingerprint}:${normalized.toLowerCase()}`;
 }
 
 /**

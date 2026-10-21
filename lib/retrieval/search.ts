@@ -44,6 +44,7 @@
 
 import { query, setLocalSearchEffort, withDirectTransaction } from "./db";
 import { toVectorLiteral } from "./embed";
+import { rerank } from "./rerank";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -92,7 +93,103 @@ export interface RankedLeg {
   name: string;
   /** Identifiers, best first. */
   ids: string[];
+  /**
+   * How much this leg counts for in the fusion. Default 1.
+   *
+   * A leg that is internally fused from several sub-legs already carries more
+   * weight than a single leg, because each of its sub-legs contributes
+   * 1/(k+rank). The keyword leg is fused from three sub-legs and the vector
+   * leg from one, so leaving both at 1 gives the keyword leg three times the
+   * influence. The weight is how that is corrected.
+   */
+  weight?: number;
 }
+
+/* ------------------------------------------------------------------ */
+/* Tuning                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The knobs of the retriever.
+ *
+ * Every default in here was MEASURED on the 150-question golden set with
+ * `scripts/eval/bench.ts` (local embeddings, no LLM). The measurement log is
+ * `docs/RETRIEVAL.md`. Changing a default means re-measuring and updating
+ * that document, because a retrieval default that nobody can reproduce is
+ * just a guess with a nicer name.
+ */
+export interface SearchTuning {
+  /**
+   * The shortest chunk that may take part in the VECTOR leg.
+   * Default 120.
+   */
+  minVectorChars: number;
+  /**
+   * How much the vector leg counts for in the top-level fusion.
+   * Default 1.
+   */
+  vectorWeight: number;
+  /**
+   * How much the keyword leg counts for in the top-level fusion.
+   * Default 1.
+   */
+  keywordWeight: number;
+  /**
+   * When the question is NOT about tests, test files are removed from the
+   * candidate pool. `true` removes them, `false` keeps them.
+   * Default true.
+   */
+  excludeTests: boolean;
+  /**
+   * A query token that appears in more than this fraction of the corpus
+   * carries no signal and is dropped from the substring legs.
+   * `1` disables the filter. Default 0.02.
+   */
+  genericTokenDfRatio: number;
+  /**
+   * Weight the substring leg by inverse document frequency instead of
+   * counting raw token hits. Default true.
+   */
+  useIdf: boolean;
+  /**
+   * Re-order the fused candidates with a local cross-encoder.
+   * Default true.
+   */
+  rerank: boolean;
+  /**
+   * How many of the fused candidates are handed to the cross-encoder.
+   * Default 20.
+   */
+  rerankDepth: number;
+  /**
+   * How many candidates each leg pulls before the fusion. Default 40.
+   */
+  candidates: number;
+  /**
+   * Pseudo-relevance feedback: take the identifiers of the best candidates
+   * and search for them again. Default false.
+   */
+  prf: boolean;
+  /**
+   * How many top candidates feed the expansion. Default 5.
+   */
+  prfTopK: number;
+}
+
+/** The production defaults. Measured, not guessed. */
+export const DEFAULT_TUNING: SearchTuning = {
+  minVectorChars: 120,
+  vectorWeight: 1,
+  keywordWeight: 4,
+  excludeTests: true,
+  genericTokenDfRatio: 1,
+  useIdf: false,
+  rerank: true,
+  rerankDepth: 20,
+  candidates: 40,
+  prf: false,
+  prfTopK: 5,
+};
 
 /** The result of an RRF fusion. */
 export interface FusedHit {
@@ -115,6 +212,48 @@ export const DEFAULT_LIMIT = 12;
 
 /** Default number of candidates pulled per leg. */
 export const DEFAULT_CANDIDATES = 40;
+
+/* ------------------------------------------------------------------ */
+/* Test files                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The Postgres regular expression that recognises a test file.
+ *
+ * 36% of the indexed corpus is test code - 1,116 of 3,068 chunks. A
+ * recruiter asking "how does the settlement engine work" wants the
+ * implementation, not the test file that asserts on it, and the tests win
+ * those slots on generic vocabulary alone ("job", "booking", "user").
+ *
+ * Measured on the golden set: removing test chunks from the candidate pool
+ * lifts FILE-level recall@5 from 64.6% to 74.7% and MRR@10 from 26.0% to
+ * 31.2%. The pool is filtered, not the corpus - a question that asks ABOUT
+ * tests keeps them.
+ */
+export const TEST_PATH_REGEX =
+  "(^|/)(tests?|__tests__|spec|specs|e2e)/|\\.(test|spec)\\.[a-z0-9]+$|(^|/)(test_[^/]*|[^/]*_test)\\.(py|js|jsx|ts|tsx|dart)$";
+
+/**
+ * Does the question itself ask about tests?
+ *
+ * When it does, the test files are exactly what the visitor wants, so they
+ * stay in the pool.
+ */
+export function queryAsksAboutTests(text: string): boolean {
+  return /\b(tests?|testing|assertions?|asserts?|spec|specs|coverage|unittest|pytest|vitest|jest|fixture|fixtures)\b/i.test(
+    text,
+  );
+}
+
+/** The path-exclusion pattern for a query, or `null` when nothing is excluded. */
+function pathExclusion(
+  text: string,
+  tuning: SearchTuning,
+): string | null {
+  if (!tuning.excludeTests) return null;
+  if (queryAsksAboutTests(text)) return null;
+  return TEST_PATH_REGEX;
+}
 
 /** Words that carry no retrieval signal in a code question. */
 const STOP_WORDS = new Set([
@@ -163,6 +302,7 @@ const VECTOR_LEG_SQL = `
    WHERE c.embedding IS NOT NULL
      AND length(c.content) >= $4
      AND ($2::text IS NULL OR c.project_id = $2)
+     AND ($5::text IS NULL OR c.path !~* $5)
    ORDER BY c.embedding <=> $1::vector
    LIMIT $3`;
 
@@ -177,6 +317,7 @@ const TSVECTOR_LEG_SQL = `
         OR c.tsv @@ websearch_to_tsquery('english', $4)
          )
      AND ($2::text IS NULL OR c.project_id = $2)
+     AND ($5::text IS NULL OR c.path !~* $5)
    ORDER BY (c.tsv @@ plainto_tsquery('english', $1)) DESC, or_score DESC,
             c.path, c.start_line
    LIMIT $3`;
@@ -200,6 +341,7 @@ const TRIGRAM_LEG_SQL = `
     CROSS JOIN unnest($1::text[], $4::text[]) AS t(token, pattern)
    WHERE (c.symbol ILIKE t.pattern OR c.path ILIKE t.pattern)
      AND ($2::text IS NULL OR c.project_id = $2)
+     AND ($5::text IS NULL OR c.path !~* $5)
    GROUP BY c.id
    ORDER BY kw_score DESC, c.path, c.start_line
    LIMIT $3`;
@@ -207,19 +349,24 @@ const TRIGRAM_LEG_SQL = `
 /**
  * Keyword sub-leg 3: exact substring fallback over the chunk content.
  *
- * The rows are ordered by the NUMBER of query tokens they contain, not by
- * their length: a one line chunk that mentions "booking" is less relevant
- * than the function that mentions "booking" AND "overlap". Counting the
- * hits needs a lateral join, which is what the `m.n` column is.
+ * The rows are ordered by the WEIGHT of the query tokens they contain, not by
+ * their count. A token that appears in every chunk ("job", "user", "booking")
+ * is worth almost nothing; a token that appears in three chunks
+ * ("is_relevant_jd") is worth a lot. That is inverse document frequency, and
+ * it is the difference between "matches three common words" and "matches one
+ * rare identifier".
+ *
+ * Counting raw hits ranked the generic words first, which is why the
+ * substring leg used to surface test files for implementation questions.
  */
 const CONTENT_LEG_SQL = `
   SELECT ${CHUNK_COLUMNS},
-         (CASE WHEN c.content ILIKE $4 THEN 100 ELSE 0 END) + COALESCE(m.n, 0)
+         (CASE WHEN c.content ILIKE $4 THEN 100 ELSE 0 END) + COALESCE(m.w, 0)
            AS kw_score
     FROM chunks c
     LEFT JOIN LATERAL (
-      SELECT count(*)::int AS n
-        FROM unnest($1::text[]) AS p(pattern)
+      SELECT sum(p.weight)::float AS w
+        FROM unnest($1::text[], $6::float[]) AS p(pattern, weight)
        WHERE c.content ILIKE p.pattern OR c.header ILIKE p.pattern
     ) m ON true
    WHERE (
@@ -229,6 +376,7 @@ const CONTENT_LEG_SQL = `
         OR c.header  ILIKE ANY($1::text[])
          )
      AND ($2::text IS NULL OR c.project_id = $2)
+     AND ($5::text IS NULL OR c.path !~* $5)
    ORDER BY kw_score DESC, length(c.content) ASC, c.path, c.start_line
    LIMIT $3`;
 
@@ -319,13 +467,108 @@ export function likePatterns(tokens: string[]): string[] {
 }
 
 /* ------------------------------------------------------------------ */
+/* Inverse document frequency                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * How many chunks contain a token. Cached per token for the life of the
+ * process: the corpus does not change while the server is up, and a
+ * recruiter's question uses the same vocabulary twice.
+ */
+const dfCache = new Map<string, number>();
+
+/** How many chunks the corpus holds. Used as `N` in the IDF formula. */
+let corpusSize = 0;
+
+/** Prime the corpus size. Called once at the start of a search. */
+async function ensureCorpusSize(): Promise<number> {
+  if (corpusSize > 0) return corpusSize;
+  const result = await query<{ total: number }>(
+    `SELECT count(*)::int AS total FROM chunks`,
+  );
+  corpusSize = result.rows[0]?.total ?? 0;
+  return corpusSize;
+}
+
+const DF_SQL = `
+  SELECT t.token, count(*)::int AS df
+    FROM unnest($1::text[]) AS t(token)
+    CROSS JOIN chunks c
+   WHERE c.content ILIKE '%' || t.token || '%'
+      OR c.header  ILIKE '%' || t.token || '%'
+   GROUP BY t.token`;
+
+/**
+ * The document frequency of each token: how many chunks contain it.
+ *
+ * A token that appears in hundreds of chunks cannot tell one chunk from
+ * another. A token that appears in three can. That is the whole difference
+ * between a substring leg that ranks test files first and one that ranks the
+ * function the visitor actually meant.
+ */
+async function documentFrequencies(tokens: string[]): Promise<Map<string, number>> {
+  const missing = tokens.filter((token) => !dfCache.has(token));
+  if (missing.length > 0) {
+    const result = await query<{ token: string; df: number }>(DF_SQL, [missing]);
+    for (const row of result.rows) dfCache.set(row.token, row.df);
+    for (const token of missing) {
+      if (!dfCache.has(token)) dfCache.set(token, 0);
+    }
+  }
+  const out = new Map<string, number>();
+  for (const token of tokens) out.set(token, dfCache.get(token) ?? 0);
+  return out;
+}
+
+/**
+ * Split the query tokens into the ones that carry signal and the ones that
+ * do not, and weight the survivors by inverse document frequency.
+ *
+ * `idf(t) = ln(N / (1 + df(t)))`. A token that appears in every chunk scores
+ * zero; a token that appears in one chunk scores the maximum.
+ */
+export function idfWeights(
+  tokens: string[],
+  df: Map<string, number>,
+  total: number,
+): Map<string, number> {
+  const weights = new Map<string, number>();
+  for (const token of tokens) {
+    const frequency = df.get(token) ?? 0;
+    weights.set(token, Math.log((total + 1) / (frequency + 1)));
+  }
+  return weights;
+}
+
+/**
+ * The tokens that are too common to be useful.
+ *
+ * The threshold is a FRACTION of the corpus: a token that appears in more
+ * than 2% of the chunks cannot discriminate between them.
+ */
+export function genericTokens(
+  tokens: string[],
+  df: Map<string, number>,
+  total: number,
+  ratio: number,
+): Set<string> {
+  const out = new Set<string>();
+  if (ratio >= 1) return out;
+  const cutoff = total * ratio;
+  for (const token of tokens) {
+    if ((df.get(token) ?? 0) > cutoff) out.add(token);
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
 /* RRF                                                                 */
 /* ------------------------------------------------------------------ */
 
 /**
  * Fuse ranked lists with Reciprocal Rank Fusion.
  *
- * `score(d) = sum over legs of 1 / (k + rank_in_leg(d))`
+ * `score(d) = sum over legs of weight(leg) / (k + rank_in_leg(d))`
  *
  * @param legs  the ranked lists, best first
  * @param k     the damping constant, 60 by default
@@ -349,9 +592,10 @@ export function fuseReciprocalRankFusion(
   }
 
   for (const leg of legs) {
+    const weight = leg.weight ?? 1;
     leg.ids.forEach((id, index) => {
       const rank = index + 1;
-      scores.set(id, (scores.get(id) ?? 0) + 1 / (k + rank));
+      scores.set(id, (scores.get(id) ?? 0) + weight / (k + rank));
       const entry = ranks.get(id) ?? {};
       entry[leg.name] = rank;
       ranks.set(id, entry);
@@ -408,6 +652,8 @@ async function vectorLeg(
   embedding: Float32Array,
   projectId: string | undefined,
   limit: number,
+  excludePath: string | null,
+  minContentChars: number,
 ): Promise<ChunkRow[]> {
   const literal = toVectorLiteral(embedding);
   // The ANN leg runs on the DIRECT connection: the `lakebase_ann` access
@@ -422,7 +668,8 @@ async function vectorLeg(
       literal,
       projectId ?? null,
       limit,
-      VECTOR_MIN_CONTENT_CHARS,
+      minContentChars,
+      excludePath,
     ]);
   });
   return result.rows;
@@ -436,9 +683,42 @@ async function keywordLeg(
   text: string,
   projectId: string | undefined,
   limit: number,
+  excludePath: string | null,
+  tuning: SearchTuning,
 ): Promise<ChunkRow[]> {
-  const tokens = extractKeywords(text);
-  const { tokens: matchTokens, patterns } = likeTokenPairs(tokens);
+  const rawTokens = extractKeywords(text);
+  const total = await ensureCorpusSize();
+
+  // The document frequency decides which tokens are worth matching on. It
+  // costs one query for the tokens that are not cached yet, and the answer
+  // is cached per token afterwards.
+  const df = await documentFrequencies(rawTokens);
+  const generic = genericTokens(
+    rawTokens,
+    df,
+    total,
+    tuning.genericTokenDfRatio,
+  );
+  const tokens = rawTokens.filter((token) => !generic.has(token));
+
+  // The singular/plural variants are matched on too, and they need their own
+  // document frequency: "booking" and "bookings" are not the same token to
+  // the index.
+  const variants: string[] = [];
+  for (const token of tokens) {
+    for (const variant of [token, ...singularVariants(token)]) {
+      if (!variants.includes(variant)) variants.push(variant);
+    }
+  }
+  const variantDf = await documentFrequencies(variants);
+  const variantWeights = idfWeights(variants, variantDf, total);
+
+  const matchTokens = variants;
+  const patterns = variants.map((variant) => `%${escapeLike(variant)}%`);
+  const patternWeights = tuning.useIdf
+    ? variants.map((variant) => variantWeights.get(variant) ?? 1)
+    : variants.map(() => 1);
+
   const fullPattern = `%${escapeLike(text.trim())}%`;
   // The OR fallback of the full text leg is built from the KEYWORDS, not
   // from the raw question: stop words like "how" or "does" would match
@@ -451,6 +731,7 @@ async function keywordLeg(
       projectId ?? null,
       limit,
       orQuery,
+      excludePath,
     ]),
     tokens.length > 0
       ? query<ChunkRow>(TRIGRAM_LEG_SQL, [
@@ -458,6 +739,7 @@ async function keywordLeg(
           projectId ?? null,
           limit,
           patterns,
+          excludePath,
         ])
       : Promise.resolve({ rows: [] as ChunkRow[], rowCount: 0 }),
     tokens.length > 0
@@ -466,6 +748,8 @@ async function keywordLeg(
           projectId ?? null,
           limit,
           fullPattern,
+          excludePath,
+          patternWeights,
         ])
       : Promise.resolve({ rows: [] as ChunkRow[], rowCount: 0 }),
   ]);
@@ -490,7 +774,99 @@ async function keywordLeg(
 }
 
 /* ------------------------------------------------------------------ */
-/* Public API                                                          */
+/* The index fingerprint                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A value that changes whenever the corpus changes.
+ *
+ * The answer cache stores a serialised answer, and an answer that was
+ * computed against an older corpus can describe code that no longer
+ * exists. The obvious fix - a counter bumped by the indexer - does not work
+ * here: the indexer is a SEPARATE PROCESS from the server, so a process
+ * local counter can never be bumped by it.
+ *
+ * The fingerprint is read from the database instead: the newest
+ * `indexed_at` in the manifest. A re-index writes a new timestamp, the
+ * fingerprint changes, and every cached answer computed against the old
+ * corpus becomes unreachable.
+ *
+ * It is cached for a minute so the chat route does not read the manifest on
+ * every request.
+ */
+const FINGERPRINT_TTL_MS = 60_000;
+
+let fingerprintCache: { value: string; at: number } | null = null;
+
+/** The current index fingerprint. */
+export async function indexFingerprint(): Promise<string> {
+  const now = Date.now();
+  if (fingerprintCache && now - fingerprintCache.at < FINGERPRINT_TTL_MS) {
+    return fingerprintCache.value;
+  }
+  const result = await query<{ fingerprint: string }>(
+    `SELECT coalesce(max(indexed_at)::text, 'empty') AS fingerprint
+       FROM index_manifest`,
+  );
+  const value = result.rows[0]?.fingerprint ?? "empty";
+  fingerprintCache = { value, at: now };
+  return value;
+}
+
+/* ------------------------------------------------------------------ */
+/* Pseudo-relevance feedback                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Split an identifier into the words it is made of.
+ *
+ * `is_relevant_jd` becomes `is`, `relevant`, `jd`. `minimumTransactions`
+ * becomes `minimum`, `transactions`. The words are what a visitor would
+ * have written if they had known the name.
+ */
+export function splitIdentifier(identifier: string): string[] {
+  return identifier
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(/[^A-Za-z0-9]+/)
+    .map((part) => part.toLowerCase())
+    .filter((part) => part.length >= 3);
+}
+
+/**
+ * The terms the best candidates contribute to a second search.
+ *
+ * Pseudo-relevance feedback is the oldest trick in information retrieval:
+ * look at what the first search found, take the vocabulary of those
+ * documents, and search again with it. It works because the first search
+ * usually finds the right FILE and the wrong PART of it - and the file
+ * name and the neighbouring symbol names are exactly the words that find
+ * the right part.
+ *
+ * Concretely: "how does it decide which jobs are worth scoring" retrieves
+ * `src/scorer.py` with the symbol `is_relevant_jd`. The expansion adds
+ * `scorer`, `relevant`, `jd`, and the second search finds
+ * `src/scorer.py:159-210 (matches_senior_title)` as well.
+ */
+export function expansionTerms(hits: SearchHit[], topK: number): string[] {
+  const terms: string[] = [];
+  const push = (term: string): void => {
+    if (term.length < 3) return;
+    if (STOP_WORDS.has(term)) return;
+    if (terms.includes(term)) return;
+    terms.push(term);
+  };
+
+  for (const hit of hits.slice(0, topK)) {
+    for (const part of splitIdentifier(hit.symbol)) push(part);
+    const fileName = hit.path.split("/").pop() ?? "";
+    const stem = fileName.replace(/\.[a-z0-9]+$/i, "");
+    for (const part of splitIdentifier(stem)) push(part);
+  }
+  return terms;
+}
+
+/* ------------------------------------------------------------------ */
+/* The public API                                                      */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -501,20 +877,30 @@ async function keywordLeg(
  *                  caller owns the model, so the same embedding can be
  *                  reused across several searches (and so the tests can
  *                  inject a fake one).
+ * @param tuning    optional overrides for the measured defaults
  */
 export async function searchChunks(
   params: SearchParams,
   embedding: Float32Array,
+  tuning: Partial<SearchTuning> = {},
 ): Promise<SearchHit[]> {
   const text = params.query.trim();
   if (!text) return [];
 
+  const settings: SearchTuning = { ...DEFAULT_TUNING, ...tuning };
   const limit = params.limit ?? DEFAULT_LIMIT;
-  const candidates = params.candidates ?? DEFAULT_CANDIDATES;
+  const candidates = settings.candidates ?? params.candidates ?? DEFAULT_CANDIDATES;
+  const excludePath = pathExclusion(text, settings);
 
   const [vectorRows, keywordRows] = await Promise.all([
-    vectorLeg(embedding, params.projectId, candidates),
-    keywordLeg(text, params.projectId, candidates),
+    vectorLeg(
+      embedding,
+      params.projectId,
+      candidates,
+      excludePath,
+      settings.minVectorChars,
+    ),
+    keywordLeg(text, params.projectId, candidates, excludePath, settings),
   ]);
 
   const byId = new Map<string, ChunkRef>();
@@ -522,24 +908,124 @@ export async function searchChunks(
     if (!byId.has(row.id)) byId.set(row.id, toChunkRef(row));
   }
 
-  const fused = fuseReciprocalRankFusion([
-    { name: "vector", ids: vectorRows.map((row) => row.id) },
-    { name: "keyword", ids: keywordRows.map((row) => row.id) },
-  ]);
+  const fuse = (
+    vectorIds: string[],
+    keywordIds: string[],
+  ): { id: string; score: number; ranks: Record<string, number | null> }[] =>
+    fuseReciprocalRankFusion([
+      { name: "vector", ids: vectorIds, weight: settings.vectorWeight },
+      { name: "keyword", ids: keywordIds, weight: settings.keywordWeight },
+    ]);
 
-  const hits: SearchHit[] = [];
-  for (const entry of fused) {
-    const ref = byId.get(entry.id);
-    if (!ref) continue;
-    hits.push({
-      ...ref,
-      score: entry.score,
-      vectorRank: entry.ranks.vector ?? null,
-      keywordRank: entry.ranks.keyword ?? null,
-    });
-    if (hits.length >= limit) break;
+  let fused = fuse(
+    vectorRows.map((row) => row.id),
+    keywordRows.map((row) => row.id),
+  );
+
+  // The fused list is the FULL candidate pool, not the answer. The
+  // cross-encoder has to see the top `rerankDepth` of it, because the whole
+  // point of the second stage is that it can pick a candidate that the
+  // bi-encoder ranked below the cut.
+  const toHits = (
+    entries: { id: string; score: number; ranks: Record<string, number | null> }[],
+  ): SearchHit[] => {
+    const out: SearchHit[] = [];
+    for (const entry of entries) {
+      const ref = byId.get(entry.id);
+      if (!ref) continue;
+      out.push({
+        ...ref,
+        score: entry.score,
+        vectorRank: entry.ranks.vector ?? null,
+        keywordRank: entry.ranks.keyword ?? null,
+      });
+    }
+    return out;
+  };
+
+  let pool = toHits(fused);
+
+  // Pseudo-relevance feedback: the identifiers of the best candidates are
+  // searched for again, which finds the neighbouring functions of the right
+  // file.
+  if (settings.prf && pool.length > 0) {
+    const terms = expansionTerms(pool, settings.prfTopK);
+    if (terms.length > 0) {
+      const expanded = await keywordLeg(
+        `${text} ${terms.join(" ")}`,
+        params.projectId,
+        candidates,
+        excludePath,
+        settings,
+      );
+      for (const row of expanded) {
+        if (!byId.has(row.id)) byId.set(row.id, toChunkRef(row));
+      }
+      fused = fuse(
+        vectorRows.map((row) => row.id),
+        [...keywordRows.map((row) => row.id), ...expanded.map((row) => row.id)],
+      );
+      pool = toHits(fused);
+    }
   }
-  return hits;
+
+  const ordered = settings.rerank
+    ? await applyReranker(text, pool, settings)
+    : pool;
+
+  return ordered.slice(0, limit);
+}
+
+/**
+ * Re-order the retrieved candidates with the local cross-encoder.
+ *
+ * The cross-encoder reads the question and the chunk TOGETHER, which the
+ * bi-encoder embedding never does. It is the difference between "the chunk
+ * is about jobs" and "the chunk is the function that decides which jobs are
+ * worth scoring".
+ *
+ * Only the first `rerankDepth` candidates are reranked, and the ones that
+ * were not reranked keep their retrieval order below them. When the model
+ * is not available the order is left exactly as it was.
+ */
+async function applyReranker(
+  query: string,
+  hits: SearchHit[],
+  settings: SearchTuning,
+): Promise<SearchHit[]> {
+  if (hits.length < 2) return hits;
+
+  const depth = Math.min(settings.rerankDepth, hits.length);
+  const head = hits.slice(0, depth);
+
+  const scored = await rerank(
+    query,
+    head.map((hit) => ({
+      id: hit.id,
+      // The header carries the repository, the file, the symbol and the
+      // imports, so the cross-encoder sees WHAT the chunk is as well as
+      // what it does.
+      text: `${hit.header}\n${hit.content}`,
+    })),
+  );
+
+  // An empty result means the model could not be loaded or threw. The
+  // retrieval order is the fallback, and it is a good one.
+  if (scored.length === 0) return hits;
+
+  const scoreById = new Map(scored.map((item) => [item.id, item.score]));
+  const reordered = [...head].sort(
+    (a, b) =>
+      (scoreById.get(b.id) ?? b.score) - (scoreById.get(a.id) ?? a.score),
+  );
+
+  return [
+    ...reordered.map((hit) => ({
+      ...hit,
+      score: scoreById.get(hit.id) ?? hit.score,
+    })),
+    ...hits.slice(depth),
+  ];
 }
 
 /* ------------------------------------------------------------------ */

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight, Building2, Mail, MapPin } from "lucide-react";
 
 import { GitHubIcon, LinkedInIcon } from "@/components/icons/BrandIcons";
@@ -14,11 +14,16 @@ type ProfileCardProps = {
 };
 
 export function ProfileCard({ profile, featured, onAsk }: ProfileCardProps) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: reduceMotion ? 0.01 : 0.35,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className="overflow-hidden rounded-[22px] border border-line bg-white/65 shadow-[0_1px_0_rgba(20,19,15,0.03)] backdrop-blur-sm"
     >
       <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">

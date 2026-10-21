@@ -1,0 +1,29 @@
+# The LangChain side-lab.
+#
+# Install with:
+#     python -m venv .venv
+#     .\.venv\Scripts\python -m pip install -r requirements.txt
+#
+# Pinned to the versions this lab was measured with. The framework moves
+# fast: `langchain-community` is already being sunset, which is one of
+# the findings in docs/LANGCHAIN_COMPARISON.md.
+
+langchain==1.4.6
+langchain-core==1.6.12
+langchain-community==0.4.2
+langchain-postgres==0.0.19
+
+# Postgres driver + the pgvector type support SQLAlchemy needs.
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3
+pgvector==0.3.6
+
+# The ONNX runtime that loads the models the repository already ships.
+# No PyTorch: the weights are already ONNX, and `sentence-transformers`
+# would pull ~2.5 GB of wheels to read a 23 MB file.
+onnxruntime==1.31.0
+tokenizers==0.23.3
+numpy==2.5.4
+
+# The golden set.
+PyYAML==6.0.3

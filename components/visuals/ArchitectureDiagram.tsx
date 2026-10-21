@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { ChevronRight, Info } from "lucide-react";
 
 import type { Architecture } from "@/lib/content/schemas";
@@ -18,6 +18,8 @@ type ArchitectureDiagramProps = {
 };
 
 export function ArchitectureDiagram({ architecture }: ArchitectureDiagramProps) {
+  const reduceMotion = useReducedMotion();
+
   const derivedColumns =
     architecture.columns ??
     Array.from(new Set(architecture.nodes.map((node) => node.column ?? 0)))
@@ -44,7 +46,10 @@ export function ArchitectureDiagram({ architecture }: ArchitectureDiagramProps) 
     <motion.section
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: reduceMotion ? 0.01 : 0.4,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className="overflow-hidden rounded-[22px] border border-line bg-white/65 shadow-[0_1px_0_rgba(20,19,15,0.03)]"
     >
       <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-5 py-4 sm:px-6">
@@ -61,7 +66,18 @@ export function ArchitectureDiagram({ architecture }: ArchitectureDiagramProps) 
         </span>
       </div>
 
-      <div className="thin-scrollbar overflow-x-auto px-5 py-6 sm:px-6">
+      {/*
+        The diagram is wider than a phone, so this region scrolls sideways.
+        A scroll container that cannot be focused is unreachable for anyone
+        who navigates with a keyboard, so it carries a role, a label and a
+        tab stop.
+      */}
+      <div
+        className="thin-scrollbar overflow-x-auto px-5 py-6 sm:px-6"
+        tabIndex={0}
+        role="region"
+        aria-label={`${architecture.title} - scrollable architecture diagram`}
+      >
         <div className="flex min-w-[720px] items-stretch">
           {derivedColumns.map((column, columnIndexValue) => {
             const nodes = architecture.nodes.filter(
@@ -82,8 +98,8 @@ export function ArchitectureDiagram({ architecture }: ArchitectureDiagramProps) 
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
-                          duration: 0.32,
-                          delay: index * 0.05,
+                          duration: reduceMotion ? 0.01 : 0.32,
+                          delay: reduceMotion ? 0 : index * 0.05,
                           ease: [0.22, 1, 0.36, 1],
                         }}
                         className={cn(

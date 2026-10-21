@@ -14,17 +14,24 @@ const nextConfig: NextConfig = {
     "sharp",
   ],
   /**
-   * The embedding model is bundled with the deployment.
+   * The MODELS are bundled with the deployment.
    *
-   * `models/Xenova/all-MiniLM-L6-v2` holds the ONNX weights, the tokenizer and the
-   * config for the local `Xenova/all-MiniLM-L6-v2` model. It is 22.6 MB and
-   * it is committed to the repository on purpose.
+   * Two of them, and both are committed to the repository on purpose:
+   *
+   *   models/Xenova/all-MiniLM-L6-v2       22.6 MB - the bi-encoder that
+   *                                         embeds the question and the code
+   *   models/Xenova/ms-marco-MiniLM-L-6-v2   23.0 MB - the cross-encoder that
+   *                                         reranks the top 20 candidates
    *
    * Next.js only traces the files a route statically imports, and the model
-   * folder is read from the filesystem at runtime rather than imported, so
-   * it would be left out of the serverless bundle. Without these includes
+   * folders are read from the filesystem at runtime rather than imported, so
+   * they would be left out of the serverless bundle. Without these includes
    * the deployed assistant answers every code question from the claim
    * ledger instead of from the source, because the model cannot be loaded.
+   *
+   * The reranker matters as much as the embedder: without it the retriever
+   * still finds the right file most of the time, but it ranks the wrong
+   * chunk inside it far more often. `docs/RETRIEVAL.md` has the numbers.
    *
    * The route globs cover every route that can reach the retrieval layer:
    * the chat endpoint, the health check, and the MCP server.
@@ -32,6 +39,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/chat": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./models/Xenova/ms-marco-MiniLM-L-6-v2/**/*",
       "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/**/*",
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/lib/**/*",
@@ -40,6 +48,7 @@ const nextConfig: NextConfig = {
     ],
     "/api/health": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./models/Xenova/ms-marco-MiniLM-L-6-v2/**/*",
       "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/**/*",
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/lib/**/*",
@@ -48,6 +57,7 @@ const nextConfig: NextConfig = {
     ],
     "/mcp": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./models/Xenova/ms-marco-MiniLM-L-6-v2/**/*",
       "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/**/*",
       "./node_modules/onnxruntime-node/dist/**/*",
       "./node_modules/onnxruntime-node/lib/**/*",

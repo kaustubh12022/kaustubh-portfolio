@@ -1,6 +1,6 @@
 import { PortfolioChat } from "@/components/chat/PortfolioChat";
 import {
-  getArchitecture,
+  getArchitectures,
   getClaims,
   getFeaturedProjects,
   getProfile,
@@ -13,9 +13,13 @@ export default function HomePage() {
   const featured = getFeaturedProjects();
   const claims = getClaims();
 
-  const architectures = Object.fromEntries(
-    featured.map((project) => [project.id, getArchitecture(project.id)]),
-  );
+  // EVERY captured architecture, not only the featured ones.
+  //
+  // The assistant answers questions about any project in the content layer.
+  // Loading the diagrams only for the featured three meant that asking
+  // about DayScore - which HAS a captured diagram - showed "not captured
+  // yet", which is false. A false "not captured" is worse than no answer.
+  const architectures = getArchitectures();
 
   return (
     <PortfolioChat

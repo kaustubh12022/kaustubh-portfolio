@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { AlertTriangle, ArrowUpRight, ExternalLink, Play } from "lucide-react";
 
 import { GitHubIcon } from "@/components/icons/BrandIcons";
@@ -41,6 +41,8 @@ type ProjectShowcaseProps = {
 };
 
 export function ProjectShowcase({ project, onAsk }: ProjectShowcaseProps) {
+  const reduceMotion = useReducedMotion();
+
   const ready = project.assets.filter((asset) => asset.status === "ready");
   const cover =
     ready.find((asset) => asset.kind === "screenshot") ??
@@ -54,7 +56,10 @@ export function ProjectShowcase({ project, onAsk }: ProjectShowcaseProps) {
     <motion.article
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: reduceMotion ? 0.01 : 0.4,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className="overflow-hidden rounded-[22px] border border-line bg-white/65 shadow-[0_1px_0_rgba(20,19,15,0.03)]"
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden border-b border-line bg-paper-deep">

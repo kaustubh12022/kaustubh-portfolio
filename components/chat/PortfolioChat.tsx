@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowUpRight, Mail, MapPin } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import { GitHubIcon, LinkedInIcon } from "@/components/icons/BrandIcons";
 
@@ -29,6 +30,38 @@ function createId() {
     return crypto.randomUUID();
   }
   return Math.random().toString(36).slice(2);
+}
+
+/* ------------------------------------------------------------------ */
+/* The deep link from a project page                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * `/?q=How does SmartApply work?` - the "Ask about this project" link on
+ * every project page.
+ *
+ * The link used to be DEAD: nothing in the app read the query string, so the
+ * question was silently dropped and the visitor landed on an empty composer.
+ * This component reads the `q` parameter and hands it to the composer.
+ *
+ * It renders nothing. It is wrapped in a Suspense boundary because
+ * `useSearchParams` opts the subtree out of static rendering, and a bailout
+ * without a boundary is a build error.
+ */
+function DeepLinkPrefill({
+  onPrefill,
+}: {
+  onPrefill: (question: string) => void;
+}) {
+  const searchParams = useSearchParams();
+  const question = searchParams.get("q");
+
+  useEffect(() => {
+    if (!question) return;
+    onPrefill(question);
+  }, [question, onPrefill]);
+
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -145,12 +178,40 @@ export function PortfolioChat({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
+  /** The question the deep link carried in, once it has been applied. */
+  const [prefilled, setPrefilled] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const firstName = profile.name.split(" ")[0] ?? profile.name;
   const lastName = profile.name.split(" ").slice(1).join(" ");
   const prompts = suggestedQuestions({ profile, projects, claims });
+
+  /**
+   * Put the deep-linked question in the composer.
+   *
+   * It PRE-FILLS and does not submit. Sending on the visitor's behalf would
+   * spend model money without being asked, and the visitor may want to
+   * reword the question first - so the text goes into the textarea, where it
+   * is real, editable and visible, and the composer takes the focus so that
+   * Enter works immediately.
+   */
+  const handlePrefill = useCallback((question: string) => {
+    const text = question.trim();
+    if (!text) return;
+    setPrefilled(text);
+    setDraft((current) => (current.trim() ? current : text));
+  }, []);
+
+  useEffect(() => {
+    if (!prefilled) return;
+    const frame = window.requestAnimationFrame(() => {
+      const composer = document.getElementById("portfolio-composer");
+      if (!composer) return;
+      composer.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [prefilled]);
 
   useEffect(() => {
     return () => {
@@ -276,6 +337,16 @@ export function PortfolioChat({
     <div className="paper-grain relative min-h-dvh overflow-hidden bg-paper">
       <div className="pointer-events-none absolute inset-0 hero-grid" aria-hidden />
 
+      {/*
+        The deep link. The boundary is required: `useSearchParams` makes the
+        subtree client-rendered, and without a Suspense boundary above it the
+        build fails with "missing-suspense-with-csr-bailout". The fallback
+        renders nothing, so the page looks exactly the same.
+      */}
+      <Suspense fallback={null}>
+        <DeepLinkPrefill onPrefill={handlePrefill} />
+      </Suspense>
+
       <AnimatePresence mode="wait">
         {!started ? (
           <motion.main
@@ -291,14 +362,23 @@ export function PortfolioChat({
                 type="button"
                 onClick={reset}
                 className="flex items-center gap-2.5 text-left"
-                aria-label="Kaustubh Kale — home"
+                title="Kaustubh Kale — home"
               >
+                {/*
+                  The accessible name has to CONTAIN the visible text.
+                  `aria-label="Kaustubh Kale — home"` did not: the visible
+                  text is "KK Kaustubh Kale", so axe reported a serious
+                  `label-content-name-mismatch`. The name now comes from the
+                  content, with "home" as a visually hidden suffix (and as the
+                  tooltip).
+                */}
                 <span className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-line-strong/80 bg-white/70 font-display text-[15px] shadow-sm">
                   KK
                 </span>
                 <span className="hidden text-[13px] font-medium tracking-[-0.01em] text-ink sm:block">
                   Kaustubh Kale
                 </span>
+                <span className="sr-only">— home</span>
               </button>
 
               <div className="flex items-center gap-4 text-[12px] text-muted">
@@ -414,13 +494,25 @@ export function PortfolioChat({
             className="relative mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-4 sm:px-6"
           >
             <header className="fixed inset-x-0 top-0 z-30 border-b border-line/70 bg-paper/80 backdrop-blur-xl">
+              {/*
+                The hero's <h1> unmounts when the thread starts, which left
+                the page without a top-level heading. This one is for the
+                screen reader and the document outline only.
+              */}
+              <h1 className="sr-only">
+                Kaustubh Kale - conversational portfolio
+              </h1>
               <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3.5 sm:px-6">
                 <button
                   type="button"
                   onClick={reset}
                   className="flex items-center gap-2.5 text-left"
-                  aria-label="Start a new conversation"
+                  title="Start a new conversation"
                 >
+                  {/*
+                    Same rule as the hero button: the accessible name is
+                    built from the visible text, so it contains it.
+                  */}
                   <span className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-line-strong/80 bg-white/70 font-display text-[13px]">
                     KK
                   </span>
@@ -432,6 +524,7 @@ export function PortfolioChat({
                       AI · automation · backend
                     </span>
                   </span>
+                  <span className="sr-only">— start a new conversation</span>
                 </button>
 
                 <button
@@ -447,47 +540,57 @@ export function PortfolioChat({
             <div
               ref={scrollRef}
               className="no-scrollbar flex-1 overflow-y-auto pb-44 pt-24"
-              aria-live="polite"
-              aria-label="Conversation"
             >
-              {messages.map((message) => (
-                <Message
-                  key={message.id}
-                  message={message}
-                  profile={profile}
-                  projects={projects}
-                  claims={claims}
-                  architectures={architectures}
-                  onAsk={submit}
-                />
-              ))}
+              {/*
+                A DEDICATED live region.
 
-              {thinking ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-3 py-3 sm:gap-4"
-                  aria-label="Thinking"
-                >
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong/70 bg-white/70 font-display text-[15px]">
-                    K
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-2xl border border-line bg-white/55 px-4 py-3">
-                    {[0, 1, 2].map((index) => (
-                      <motion.span
-                        key={index}
-                        className="h-1.5 w-1.5 rounded-full bg-muted"
-                        animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          delay: index * 0.14,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              ) : null}
+                The scroll container used to carry `aria-live="polite"`, which
+                means every reflow of the thread - and the whole thread is
+                replaced on every message - was announced. A `role="log"`
+                announces the content that is ADDED, which is what a reader
+                of a conversation actually wants.
+              */}
+              <div role="log" aria-live="polite" aria-label="Conversation">
+                {messages.map((message) => (
+                  <Message
+                    key={message.id}
+                    message={message}
+                    profile={profile}
+                    projects={projects}
+                    claims={claims}
+                    architectures={architectures}
+                    onAsk={submit}
+                  />
+                ))}
+
+                {thinking ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3 py-3 sm:gap-4"
+                    role="status"
+                    aria-label="Thinking"
+                  >
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong/70 bg-white/70 font-display text-[15px]">
+                      K
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-2xl border border-line bg-white/55 px-4 py-3">
+                      {[0, 1, 2].map((index) => (
+                        <motion.span
+                          key={index}
+                          className="h-1.5 w-1.5 rounded-full bg-muted"
+                          animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            delay: index * 0.14,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : null}
+              </div>
             </div>
 
             <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-paper via-paper/95 to-transparent pb-4 pt-10">

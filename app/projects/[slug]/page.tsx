@@ -514,6 +514,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               The assistant answers from the same content layer this page is
               built from, and shows the source lines behind every answer.
             </p>
+            <p className="mt-1.5 max-w-[54ch] text-[12.5px] leading-[1.6] text-muted">
+              The question below opens the chat with it already typed into the
+              composer. Nothing is sent until you press Enter, so you can
+              reword it first.
+            </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Link

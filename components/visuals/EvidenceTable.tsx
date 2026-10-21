@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -39,11 +39,16 @@ type EvidenceTableProps = {
 };
 
 export function EvidenceTable({ claims }: EvidenceTableProps) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: reduceMotion ? 0.01 : 0.4,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className="overflow-hidden rounded-[22px] border border-line bg-white/65 shadow-[0_1px_0_rgba(20,19,15,0.03)]"
     >
       <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-5 py-4 sm:px-6">
@@ -70,7 +75,10 @@ export function EvidenceTable({ claims }: EvidenceTableProps) {
               key={claim.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.06 }}
+              transition={{
+                duration: reduceMotion ? 0.01 : 0.3,
+                delay: reduceMotion ? 0 : index * 0.06,
+              }}
               className="rounded-xl border border-line bg-paper/55 p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">

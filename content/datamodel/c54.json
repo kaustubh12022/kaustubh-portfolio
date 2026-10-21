@@ -1,0 +1,188 @@
+{
+  "project": "c54",
+  "generatedBy": "scripts/index/datamodel.ts",
+  "source": "The Postgres tables created by init_tables.js. That file is deliberately not in the retrieval index (it used to carry a hardcoded credential), so it is read from the local clone instead.",
+  "entities": [
+    {
+      "name": "live_sessions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "game_type",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "session_data",
+          "type": "jsonb",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "players",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "is_preset",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "name": "rummy_games",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "jsonb",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "settle_ups",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "from_player",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "to_player",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "settlement_ledger",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "from_player",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "to_player",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "required": true
+        },
+        {
+          "name": "paid_amount",
+          "type": "numeric",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "game_label",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": true
+        },
+        {
+          "name": "settled_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "name": "teen_patti_games",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "jsonb",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

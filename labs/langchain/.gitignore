@@ -1,0 +1,9 @@
+# Local virtualenv for the LangChain side-lab.
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Benchmark output written by `--out`
+results/

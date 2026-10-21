@@ -91,11 +91,24 @@ export function ComparisonCards({ projects, dimension }: ComparisonCardsProps) {
 
       {rows.length ? (
         <>
+          {/*
+            On a phone the cards sit in a horizontal scroller. A scroll
+            container that cannot be focused is unreachable for anyone who
+            navigates with a keyboard, so it carries a role, a label and a
+            tab stop.
+          */}
           <div
             className={cn(
               "thin-scrollbar flex gap-3 overflow-x-auto p-5 pb-4 sm:grid sm:gap-3 sm:overflow-x-visible sm:p-6",
               gridClass,
             )}
+            tabIndex={0}
+            role="region"
+            aria-label={
+              dimension
+                ? `Project comparison on ${dimension} - scrollable`
+                : "Project comparison - scrollable"
+            }
           >
             {rows.map((row, index) => {
               const status = row.status

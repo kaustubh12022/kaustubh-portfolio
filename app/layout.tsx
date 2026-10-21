@@ -16,9 +16,18 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+/**
+ * Instrument Serif is loaded with BOTH styles.
+ *
+ * The display font is rendered with `italic` in a few places (the hero
+ * name, the card headings). Loading only `weight: "400"` meant the browser
+ * had no real oblique and synthesised one by slanting the glyphs, which
+ * looks noticeably worse than the typeface's own italic.
+ */
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
+  style: ["normal", "italic"],
   variable: "--font-instrument",
   display: "swap",
 });

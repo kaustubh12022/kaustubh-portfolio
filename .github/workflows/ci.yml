@@ -1,0 +1,69 @@
+# =============================================================================
+# The automatic pipeline.
+#
+# Everything in this file is FREE: no model is called, no database is needed
+# and no secret is required. The answer benchmark (which calls DeepSeek) is
+# NOT here - it lives in `.github/workflows/golden-eval.yml` and is started
+# by hand.
+#
+# The gitleaks step needs the FULL history: the scanner walks every commit,
+# so a shallow clone (the default) would only see the last commit and a
+# secret that was committed and removed again would slip through. That is why
+# the checkout below uses `fetch-depth: 0`.
+# =============================================================================
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          # gitleaks scans the whole history, so the clone has to be complete.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+        # `tests/eval/golden-set.test.ts` checks the golden set against the
+        # LIVE index. It SKIPS itself when DATABASE_URL is not set or the
+        # database is unreachable, so this job needs no secret and no
+        # database: the run reports one skipped test instead of failing.
+        # The check that needs the index runs in the manual golden-eval
+        # workflow, where the secret is available.
+
+      - name: Scan the history for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # The action reads the token from the environment. It is used for
+          # the PR summary, which is switched off below.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # No comments and no summary: the action then only needs the token
+          # to read the repository, and a fork pull request cannot fail
+          # because it has no write permission.
+          GITLEAKS_ENABLE_COMMENTS: false
+          GITLEAKS_ENABLE_SUMMARY: false
+          # The scan is a gate: a finding fails the job.
+          fail_on_error: true
+
+      - name: Build
+        run: npm run build

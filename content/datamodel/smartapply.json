@@ -1,0 +1,178 @@
+{
+  "project": "smartapply",
+  "generatedBy": "scripts/index/datamodel.ts",
+  "source": "SmartApply keeps a local SQLite application tracker (data_folder/application_tracker.db). The Postgres mirror in setup_db.py is a different store with a different shape and is not drawn here.",
+  "entities": [
+    {
+      "name": "daily_metrics",
+      "fields": [
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "required": true
+        },
+        {
+          "name": "jobs_scanned",
+          "type": "INTEGER"
+        },
+        {
+          "name": "early_applicants_found",
+          "type": "INTEGER"
+        },
+        {
+          "name": "vetoed_spam",
+          "type": "INTEGER"
+        },
+        {
+          "name": "resumes_tailored",
+          "type": "INTEGER"
+        },
+        {
+          "name": "applications_submitted",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        }
+      ]
+    },
+    {
+      "name": "submission_audits",
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "required": true
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "required": true,
+          "relation": "tracked_jobs"
+        },
+        {
+          "name": "company",
+          "type": "TEXT"
+        },
+        {
+          "name": "title",
+          "type": "TEXT"
+        },
+        {
+          "name": "portal",
+          "type": "TEXT",
+          "required": true
+        },
+        {
+          "name": "applied_at",
+          "type": "TEXT",
+          "required": true
+        },
+        {
+          "name": "confirmation_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "screenshot_path",
+          "type": "TEXT"
+        },
+        {
+          "name": "submission_verified",
+          "type": "INTEGER"
+        },
+        {
+          "name": "response_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "audit_notes",
+          "type": "TEXT"
+        }
+      ],
+      "relations": [
+        {
+          "from": "submission_audits",
+          "to": "tracked_jobs",
+          "label": "job_id",
+          "kind": "1-n"
+        }
+      ]
+    },
+    {
+      "name": "tracked_jobs",
+      "fields": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "required": true
+        },
+        {
+          "name": "company",
+          "type": "TEXT"
+        },
+        {
+          "name": "location",
+          "type": "TEXT"
+        },
+        {
+          "name": "url",
+          "type": "TEXT"
+        },
+        {
+          "name": "source",
+          "type": "TEXT"
+        },
+        {
+          "name": "job_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "applicant_count",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_early_applicant",
+          "type": "INTEGER"
+        },
+        {
+          "name": "early_priority_tier",
+          "type": "TEXT"
+        },
+        {
+          "name": "score",
+          "type": "INTEGER"
+        },
+        {
+          "name": "missing_skills",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "veto_reason",
+          "type": "TEXT"
+        },
+        {
+          "name": "tailored_resume_path",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        }
+      ]
+    }
+  ]
+}

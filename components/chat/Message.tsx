@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "motion/react";
@@ -18,6 +19,24 @@ type MessageProps = {
   onAsk: (question: string) => void;
 };
 
+/**
+ * Does this evidence label point at the file the code excerpt shows?
+ *
+ * The label is a human-readable string such as `src/ai_engine.py:59` or
+ * `smartapply src/ai_engine.py:59-74`, so the comparison is done on the
+ * path part, from both ends: a label may carry the project prefix and a
+ * path may carry a directory the label dropped.
+ */
+function citesSameFile(label: string, path: string): boolean {
+  if (!path) return false;
+  const withoutLines = label.includes(":")
+    ? label.slice(0, label.lastIndexOf(":"))
+    : label;
+  const trimmed = withoutLines.trim();
+  if (!trimmed) return false;
+  return trimmed.endsWith(path) || path.endsWith(trimmed);
+}
+
 export function Message({
   message,
   profile,
@@ -27,6 +46,29 @@ export function Message({
   onAsk,
 }: MessageProps) {
   const isUser = message.role === "user";
+
+  /**
+   * Which citation chip is open.
+   *
+   * The chips used to be static `<span>`s: a keyboard user could not
+   * activate them and they did nothing. They are real buttons now, and the
+   * one that matches the code excerpt opens the excerpt.
+   */
+  const [openCitation, setOpenCitation] = useState<number | null>(null);
+
+  /**
+   * The code visual, and the chip that cites it.
+   *
+   * The excerpt is rendered INSIDE the chip's panel, so the chip really does
+   * toggle the source instead of sitting next to it. When no chip cites the
+   * file, the excerpt stays where it was: inline, above the chips.
+   */
+  const codeVisual = message.visual?.kind === "code" ? message.visual : null;
+  const codeCitationIndex = codeVisual
+    ? (message.evidence ?? []).findIndex((item) =>
+        citesSameFile(item, codeVisual.path),
+      )
+    : -1;
 
   if (isUser) {
     return (
@@ -75,7 +117,7 @@ export function Message({
           </ReactMarkdown>
         </div>
 
-        {message.visual ? (
+        {message.visual && codeCitationIndex === -1 ? (
           <div className="mt-4">
             <VisualRenderer
               spec={message.visual}
@@ -89,19 +131,59 @@ export function Message({
         ) : null}
 
         {message.evidence?.length ? (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted">
-              Evidence
-            </span>
-            {message.evidence.map((item) => (
-              <span
-                key={item}
-                className={cn(
-                  "rounded-full border border-line bg-paper-deep/60 px-2.5 py-1 font-mono text-[10.5px] text-muted",
-                )}
-              >
-                {item}
+          <div className="mt-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted">
+                Evidence
               </span>
+              {message.evidence.map((item, index) => (
+                <button
+                  key={`${item}-${index}`}
+                  type="button"
+                  id={`citation-${message.id}-${index}`}
+                  aria-expanded={openCitation === index}
+                  aria-controls={`citation-panel-${message.id}-${index}`}
+                  onClick={() =>
+                    setOpenCitation((current) =>
+                      current === index ? null : index,
+                    )
+                  }
+                  className={cn(
+                    "cursor-pointer rounded-full border border-line bg-paper-deep/60 px-2.5 py-1 font-mono text-[10.5px] text-muted transition-colors hover:border-accent/40 hover:text-ink",
+                    openCitation === index &&
+                      "border-accent/45 bg-accent-soft/60 text-ink",
+                  )}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            {message.evidence.map((item, index) => (
+              <div
+                key={`panel-${item}-${index}`}
+                id={`citation-panel-${message.id}-${index}`}
+                hidden={openCitation !== index}
+                className="mt-3"
+              >
+                {index === codeCitationIndex && codeVisual ? (
+                  <VisualRenderer
+                    spec={codeVisual}
+                    profile={profile}
+                    projects={projects}
+                    claims={claims}
+                    architectures={architectures}
+                    onAsk={onAsk}
+                  />
+                ) : (
+                  <p className="rounded-[14px] border border-line bg-paper-deep/40 px-3.5 py-2.5 text-[12px] leading-relaxed text-muted">
+                    This citation was verified against the pinned commit before
+                    the answer was sent. The source excerpt for this file was
+                    not attached to the answer, so nothing is shown here rather
+                    than something invented.
+                  </p>
+                )}
+              </div>
             ))}
           </div>
         ) : null}

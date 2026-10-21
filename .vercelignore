@@ -1,0 +1,50 @@
+# What Vercel should NOT upload.
+#
+# `.gitignore` already excludes most of this, but the Vercel CLI uploads
+# whatever it finds on disk, and two directories are large enough to make
+# the upload slow and the build fragile:
+#
+#   node_modules/  2.3 GB - Vercel installs it from package-lock.json
+#   labs/           248 MB - the LangChain side-lab's Python virtualenv
+#
+# The models ARE uploaded on purpose: they are the ONNX weights that make
+# the retrieval layer work on a cold serverless instance, and they are
+# traced into the bundle by next.config.ts.
+
+node_modules
+.next
+out
+build
+dist
+coverage
+playwright-report
+test-results
+blob-report
+promptfoo/output
+promptfoo/.cache
+.lighthouseci
+
+# the LangChain side-lab: a learning artifact, not part of the application.
+# The deployed app does not import it.
+labs
+
+# local index artifacts and the benchmark's embedding cache
+data
+
+# local evaluation output
+evals/.golden-slice.*
+evals/.last-run.json
+evals/.retrieval-last.txt
+
+# local dev server logs
+.dev.log
+.dev.err
+
+# local environment
+.env
+.env.local
+.env.*.local
+
+# OS noise
+.DS_Store
+Thumbs.db

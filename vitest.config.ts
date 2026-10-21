@@ -4,7 +4,15 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["tests/unit/**/*.test.ts", "tests/eval/**/*.test.ts"],
+    include: [
+      "tests/unit/**/*.test.ts",
+      "tests/eval/**/*.test.ts",
+      "tests/visuals/**/*.test.ts",
+    ],
+    // The Playwright suite lives in `tests/e2e` and is run by `npm run
+    // test:e2e`, not by Vitest. The `include` above already excludes it; the
+    // explicit exclude keeps it excluded if the include is ever widened.
+    exclude: ["tests/e2e/**", "node_modules/**", ".next/**", "dist/**"],
   },
   resolve: {
     alias: {

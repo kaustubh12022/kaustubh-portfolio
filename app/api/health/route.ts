@@ -29,6 +29,7 @@ import {
   spendTodayUsd,
 } from "@/lib/ai/spend";
 import { EMBEDDING_MODEL, embedQuery } from "@/lib/retrieval/embed";
+import { rerank } from "@/lib/retrieval/rerank";
 import { getProjectStats, searchChunks } from "@/lib/retrieval/search";
 
 export const runtime = "nodejs";
@@ -49,10 +50,12 @@ async function probeRetrieval(): Promise<{
   embedding: LayerState;
   database: LayerState;
   search: LayerState;
+  reranker: LayerState;
 }> {
   let embedding: LayerState = { ok: false, detail: "not attempted" };
   let database: LayerState = { ok: false, detail: "not attempted" };
   let search: LayerState = { ok: false, detail: "not attempted" };
+  let reranker: LayerState = { ok: false, detail: "not attempted" };
 
   let vector: Float32Array | null = null;
   try {
@@ -74,6 +77,7 @@ async function probeRetrieval(): Promise<{
       embedding,
       database: { ok: false, detail: "skipped: no embedding" },
       search: { ok: false, detail: "skipped: no embedding" },
+      reranker: { ok: false, detail: "skipped: no embedding" },
     };
   }
 
@@ -90,6 +94,7 @@ async function probeRetrieval(): Promise<{
       embedding,
       database,
       search: { ok: false, detail: "skipped: the database is unreachable" },
+      reranker: { ok: false, detail: "skipped: the database is unreachable" },
     };
   }
 
@@ -105,7 +110,35 @@ async function probeRetrieval(): Promise<{
     search = { ok: false, detail: (error as Error).message };
   }
 
-  return { embedding, database, search };
+  /**
+   * The cross-encoder is the SECOND stage of the retrieval pipeline.
+   * It runs after the fusion, so a failure there is invisible in the search
+   * layer: the search still returns hits, they are just ranked badly.
+   * That is exactly the kind of silent degradation a health check has to
+   * name, so it gets its own probe.
+   */
+  try {
+    const started = Date.now();
+    const scored = await rerank("health check: a function that returns a cost", [
+      { id: "probe-1", text: "def calculate_deepseek_cost(usage):\n    return usage.total * 0.27" },
+      { id: "probe-2", text: "const button = document.querySelector('.menu');" },
+    ]);
+    reranker = scored.length > 0
+      ? {
+          ok: true,
+          detail: `scored ${scored.length} pairs in ${Date.now() - started}ms, ` +
+            `top=${scored[0]?.id}`,
+        }
+      : {
+          ok: false,
+          detail: "the cross-encoder could not be loaded; the retriever is " +
+            "running without a reranker and ranks the right file less precisely",
+        };
+  } catch (error) {
+    reranker = { ok: false, detail: (error as Error).message };
+  }
+
+  return { embedding, database, search, reranker };
 }
 
 export async function GET(): Promise<Response> {
