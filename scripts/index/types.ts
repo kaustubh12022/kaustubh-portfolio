@@ -15,7 +15,8 @@ export type ProjectId =
   | "c54"
   | "personal-ai-os"
   | "aura"
-  | "dayscore";
+  | "dayscore"
+  | "copilot";
 
 /** A single project in the ingestion manifest. */
 export interface ProjectDef {

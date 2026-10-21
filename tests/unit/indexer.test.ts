@@ -568,7 +568,7 @@ describe("upsertChunks", () => {
 /* ------------------------------------------------------------------ */
 
 describe("manifest", () => {
-  it("contains the six projects with full shas", () => {
+  it("contains the seven projects with full shas", () => {
     expect(PROJECTS.map((p) => p.id)).toEqual([
       "smartapply",
       "pawna",
@@ -576,6 +576,7 @@ describe("manifest", () => {
       "personal-ai-os",
       "aura",
       "dayscore",
+      "copilot",
     ]);
     for (const project of PROJECTS) {
       expect(project.repoSha).toMatch(/^[0-9a-f]{40}$/);

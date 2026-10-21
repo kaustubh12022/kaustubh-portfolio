@@ -108,6 +108,17 @@ export const PROJECTS: ProjectDef[] = [
     exclude: [],
     languages: ["javascript", "html", "css"],
   },
+  {
+    id: "copilot",
+    name: "personal-application-copilot",
+    repoPath: path.join(REPOS_ROOT, "personal-application-copilot"),
+    repoUrl: "https://github.com/kaustubh12022/personal-application-copilot.git",
+    repoSha: "6e38dac22a8c94e60dd8d9c37b187700863e5d34",
+    defaultBranch: "main",
+    include: ["app/**", "context/**", "lib/**"],
+    exclude: [".env*", "*.local"],
+    languages: ["typescript", "javascript", "markdown"],
+  },
 ];
 
 /** Look up a single project by id. */

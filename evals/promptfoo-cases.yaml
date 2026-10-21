@@ -280,8 +280,6 @@
       value: ai_engine.py
     - type: icontains
       value: calculate_deepseek_cost
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q032 file_lookup
   vars:
     question: Where is the job relevance filter for SmartApply implemented - give me the file and the function name.
@@ -292,8 +290,6 @@
       value: scorer.py
     - type: icontains
       value: is_relevant_jd
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q033 file_lookup
   vars:
     question: Which file renders the SmartApply resume PDF, and what function do I look at?
@@ -302,8 +298,6 @@
   assert:
     - type: icontains
       value: pdf_generator.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q034 file_lookup
   vars:
     question: Where is the ATS audit of the generated resume PDF written?
@@ -314,8 +308,6 @@
       value: ats_verifier.py
     - type: icontains
       value: audit_resume_pdf
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q035 file_lookup
   vars:
     question: Which file contains the resume tailoring logic that locks personal facts?
@@ -324,8 +316,6 @@
   assert:
     - type: icontains
       value: resume_tailor.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q036 file_lookup
   vars:
     question: Which function in SmartApply applies the pandas based job filtering?
@@ -336,8 +326,6 @@
       value: apply_pandas_filter
     - type: icontains
       value: scraper.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q037 file_lookup
   vars:
     question: Where is the SmartApply job model defined?
@@ -346,8 +334,6 @@
   assert:
     - type: icontains
       value: models.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q038 file_lookup
   vars:
     question: Which file holds the consultancy and repost veto logic in SmartApply?
@@ -356,8 +342,6 @@
   assert:
     - type: icontains
       value: consultancy_veto.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q039 file_lookup
   vars:
     question: Which file contains the early applicant tier logic in SmartApply?
@@ -366,8 +350,6 @@
   assert:
     - type: icontains
       value: early_applicant.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q040 file_lookup
   vars:
     question: Which file implements the SmartApply database writes for pipeline runs?
@@ -378,8 +360,6 @@
       value: db.py
     - type: icontains
       value: save_pipeline_results
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q041 file_lookup
   vars:
     question: Which file and function handles the Naukri application form for SmartApply?
@@ -390,8 +370,6 @@
       value: naukri_bot.py
     - type: icontains
       value: handle_form_questionnaire
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q042 file_lookup
   vars:
     question: Which file parses the Workday job pages for SmartApply?
@@ -400,8 +378,6 @@
   assert:
     - type: icontains
       value: workday.py
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q043 file_lookup
   vars:
     question: Which file contains the Pawna booking controller?
@@ -410,8 +386,6 @@
   assert:
     - type: icontains
       value: bookingController.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q044 file_lookup
   vars:
     question: Which file defines the Pawna Booking Mongoose schema?
@@ -420,8 +394,6 @@
   assert:
     - type: icontains
       value: models/Booking.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q045 file_lookup
   vars:
     question: Where is the Pawna JWT authorization middleware defined?
@@ -430,8 +402,6 @@
   assert:
     - type: icontains
       value: authMiddleware.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q046 file_lookup
   vars:
     question: Which file contains the Pawna analytics controller?
@@ -440,8 +410,6 @@
   assert:
     - type: icontains
       value: analyticsController.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q047 file_lookup
   vars:
     question: Which file has the script that removes plaintext passwords from the Pawna database?
@@ -450,8 +418,6 @@
   assert:
     - type: icontains
       value: purge-plaintext-passwords.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q048 file_lookup
   vars:
     question: Which file implements the Personal AI OS chat edge function?
@@ -460,8 +426,6 @@
   assert:
     - type: icontains
       value: index.ts
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q049 file_lookup
   vars:
     question: Which file implements the Aura Gemini Live relay?
@@ -470,8 +434,6 @@
   assert:
     - type: icontains
       value: geminiLiveRelay.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q050 file_lookup
   vars:
     question: Which file holds the Aura brand policy rules for the voice agent?
@@ -480,8 +442,6 @@
   assert:
     - type: icontains
       value: brandPolicy.js
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "code";
 - description: q051 architecture
   vars:
     question: Show me the SmartApply pipeline architecture from scrape to tracker.
@@ -490,8 +450,6 @@
   assert:
     - type: icontains
       value: SmartApply
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q052 architecture
   vars:
     question: Walk me through the SmartApply architecture stage by stage.
@@ -500,8 +458,6 @@
   assert:
     - type: icontains
       value: stage
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q053 architecture
   vars:
     question: How is the SmartApply architecture split between the scraper, the scorer and the tailors?
@@ -510,8 +466,6 @@
   assert:
     - type: icontains
       value: scor
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q054 architecture
   vars:
     question: How does the SmartApply architecture handle the React dashboard and the Flask API?
@@ -522,8 +476,6 @@
       value: React
     - type: icontains
       value: Flask
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q055 architecture
   vars:
     question: Describe the Pawna booking architecture from the visitor's booking form to the database.
@@ -532,8 +484,6 @@
   assert:
     - type: icontains
       value: booking
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q056 architecture
   vars:
     question: How is the Pawna architecture split between the visitor app, the owner dashboard and the API?
@@ -544,8 +494,6 @@
       value: owner
     - type: icontains
       value: API
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q057 architecture
   vars:
     question: What does the Pawna backend architecture look like, including the routes and the rate limiters?
@@ -554,8 +502,6 @@
   assert:
     - type: icontains
       value: route
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q058 architecture
   vars:
     question: How is the Pawna architecture secured - what sits between the public booking route and the owner routes?
@@ -564,8 +510,6 @@
   assert:
     - type: icontains
       value: JWT
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q059 architecture
   vars:
     question: How does the Personal AI OS architecture go from a chat message to a database write?
@@ -574,8 +518,6 @@
   assert:
     - type: icontains
       value: chat
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q060 architecture
   vars:
     question: "Describe the Personal AI OS architecture: Flutter app, edge function and Supabase."
@@ -586,8 +528,6 @@
       value: Flutter
     - type: icontains
       value: Supabase
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q061 architecture
   vars:
     question: How does the Personal AI OS architecture handle the provider fallback chain?
@@ -596,8 +536,6 @@
   assert:
     - type: icontains
       value: fallback
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q062 architecture
   vars:
     question: Describe the Aura voice architecture from the browser microphone to Gemini Live and back.
@@ -606,8 +544,6 @@
   assert:
     - type: icontains
       value: Gemini
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q063 architecture
   vars:
     question: How is the Aura architecture split between the client hook, the relay and the policy layer?
@@ -616,8 +552,6 @@
   assert:
     - type: icontains
       value: relay
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q064 architecture
   vars:
     question: How does the Aura architecture record a call and then summarise it?
@@ -626,8 +560,6 @@
   assert:
     - type: icontains
       value: summary
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q065 architecture
   vars:
     question: What is the overall architecture of the SmartApply standalone dashboard?
@@ -636,8 +568,6 @@
   assert:
     - type: icontains
       value: dashboard
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "architecture";
 - description: q066 data_model
   vars:
     question: What does the Job record look like in SmartApply?
@@ -646,8 +576,6 @@
   assert:
     - type: icontains
       value: Job
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q067 data_model
   vars:
     question: How does SmartApply initialise its database tables?
@@ -658,8 +586,6 @@
       value: table
     - type: icontains
       value: database
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q068 data_model
   vars:
     question: How are pipeline runs and their metrics persisted in SmartApply?
@@ -668,8 +594,6 @@
   assert:
     - type: icontains
       value: run
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q069 data_model
   vars:
     question: What fields does the Pawna Booking collection store?
@@ -678,8 +602,6 @@
   assert:
     - type: icontains
       value: booking
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q070 data_model
   vars:
     question: What does the Pawna Property schema look like?
@@ -688,8 +610,6 @@
   assert:
     - type: icontains
       value: Property
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q071 data_model
   vars:
     question: How does the Pawna backend connect to MongoDB?
@@ -700,8 +620,6 @@
       value: MongoDB
     - type: icontains
       value: mongoose
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q072 data_model
   vars:
     question: What data does the Pawna user model keep?
@@ -710,8 +628,6 @@
   assert:
     - type: icontains
       value: User
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q073 data_model
   vars:
     question: What tables does the Personal AI OS database schema create?
@@ -720,8 +636,6 @@
   assert:
     - type: icontains
       value: table
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q074 data_model
   vars:
     question: What does the align_schema migration change in the Personal AI OS database?
@@ -730,8 +644,6 @@
   assert:
     - type: icontains
       value: schema
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q075 data_model
   vars:
     question: Where does Aura keep its order records?
@@ -740,8 +652,6 @@
   assert:
     - type: icontains
       value: order
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "data-model";
 - description: q076 metrics
   vars:
     question: How many job postings did the recorded SmartApply batch start with?
@@ -750,8 +660,6 @@
   assert:
     - type: icontains
       value: 3,360
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q077 metrics
   vars:
     question: How many postings were actually scored in the recorded SmartApply batch?
@@ -760,8 +668,6 @@
   assert:
     - type: icontains
       value: 1,032
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q078 metrics
   vars:
     question: How much did the SmartApply filter reduce the number of LLM scoring calls?
@@ -770,8 +676,6 @@
   assert:
     - type: icontains
       value: 69%
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q079 metrics
   vars:
     question: How many code lines does SmartApply have, and how many test functions?
@@ -782,8 +686,6 @@
       value: "39"
     - type: icontains
       value: "455"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q080 metrics
   vars:
     question: What are the tracked metrics for the Pawna camping project?
@@ -794,8 +696,6 @@
       value: "17"
     - type: icontains
       value: "20"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q081 metrics
   vars:
     question: How many properties did the Pawna live audit find?
@@ -806,8 +706,6 @@
       value: "3"
     - type: not-icontains
       value: 5+
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q082 metrics
   vars:
     question: How many tests does Aura have?
@@ -816,8 +714,6 @@
   assert:
     - type: icontains
       value: "129"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q083 metrics
   vars:
     question: What are the code line and test counts for the Personal AI OS project?
@@ -828,8 +724,6 @@
       value: 3,959
     - type: icontains
       value: "23"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q084 metrics
   vars:
     question: How many code lines and git commits does the C54 project have?
@@ -840,8 +734,6 @@
       value: 4,703
     - type: icontains
       value: "23"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q085 metrics
   vars:
     question: How many test assertions are in the C54 test suite?
@@ -850,8 +742,6 @@
   assert:
     - type: icontains
       value: "39"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q086 metrics
   vars:
     question: What is the code size of the DayScore project?
@@ -860,8 +750,6 @@
   assert:
     - type: icontains
       value: 2,794
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q087 metrics
   vars:
     question: What were the SmartApply metrics in the 14 October batch?
@@ -870,8 +758,6 @@
   assert:
     - type: icontains
       value: "17"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q088 metrics
   vars:
     question: List every metric you have verified across the whole portfolio.
@@ -882,8 +768,6 @@
       value: 3,360
     - type: icontains
       value: 1,032
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q089 metrics
   vars:
     question: How many postings did the SmartApply filter drop in the recorded batch?
@@ -892,8 +776,6 @@
   assert:
     - type: icontains
       value: 2,328
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q090 metrics
   vars:
     question: What is the code line count of Aura, and how many git commits does the Pawna project have?
@@ -904,8 +786,6 @@
       value: 7,615
     - type: icontains
       value: "20"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "metrics";
 - description: q091 claim_correction
   vars:
     question: Your resume says you have Spring Boot, MySQL and JPA project experience. Which project proves that?
@@ -918,8 +798,6 @@
       value: spring-boot-starter
     - type: not-icontains
       value: application.properties
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q092 claim_correction
   vars:
     question: Tell me about MedFlow, the Spring Boot healthcare service with JWT RBAC and 40% faster reports.
@@ -934,8 +812,6 @@
       value: "@Transactional"
     - type: not-icontains
       value: pom.xml
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q093 claim_correction
   vars:
     question: What HIPAA controls does MedFlow implement?
@@ -950,8 +826,6 @@
       value: application.properties
     - type: not-icontains
       value: "@Entity"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q094 claim_correction
   vars:
     question: How does C54 use Socket.IO to drive concurrent multiplayer game loops?
@@ -966,8 +840,6 @@
       value: io.on
     - type: not-icontains
       value: ws.on
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q095 claim_correction
   vars:
     question: Does SmartApply render the resume PDF with WeasyPrint?
@@ -982,8 +854,6 @@
       value: HTML(string=
     - type: not-icontains
       value: write_pdf
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q096 claim_correction
   vars:
     question: Which template engine and renderer actually produce the ATS PDF in SmartApply?
@@ -998,8 +868,6 @@
       value: from weasyprint
     - type: not-icontains
       value: write_pdf
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q097 claim_correction
   vars:
     question: Your resume calls the booking project CampFlow. What is the project actually called in the code?
@@ -1008,8 +876,6 @@
   assert:
     - type: icontains
       value: CampFlow
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q098 claim_correction
   vars:
     question: How many business owners adopted the CampFlow booking platform?
@@ -1018,8 +884,6 @@
   assert:
     - type: icontains
       value: owner
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q099 claim_correction
   vars:
     question: Is CampFlow a multi-tenant portal with tenant isolation and self-serve onboarding?
@@ -1028,8 +892,6 @@
   assert:
     - type: icontains
       value: multi-property
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q100 claim_correction
   vars:
     question: Is CampFlow deployed as a set of RESTful microservices on Vercel?
@@ -1040,8 +902,6 @@
       value: Vercel
     - type: icontains
       value: Render
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q101 claim_correction
   vars:
     question: Are the CampFlow analytics dashboards real-time, and do push notifications work for owners?
@@ -1050,8 +910,6 @@
   assert:
     - type: icontains
       value: dashboard
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q102 claim_correction
   vars:
     question: Is the Personal AI OS built with Python, Ollama, LangChain, FastAPI and SQLite?
@@ -1068,8 +926,6 @@
       value: from fastapi
     - type: not-icontains
       value: from langchain
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q103 claim_correction
   vars:
     question: Does the Personal AI OS do low-latency voice streaming with custom tool-calling agents?
@@ -1078,8 +934,6 @@
   assert:
     - type: icontains
       value: Voice
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q104 claim_correction
   vars:
     question: You list production RAG and vector search experience. Which shipped project is that?
@@ -1096,8 +950,6 @@
       value: chroma
     - type: not-icontains
       value: faiss
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q105 claim_correction
   vars:
     question: Show me the Neon-Pulse recursive pattern engine with its 20+ difficulty tiers.
@@ -1110,8 +962,6 @@
       value: difficulty_tiers
     - type: not-icontains
       value: neon-pulse/src
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q106 claim_correction
   vars:
     question: Which GitHub account actually hosts the projects in this portfolio?
@@ -1120,8 +970,6 @@
   assert:
     - type: icontains
       value: github.com/kaustubh12022
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q107 claim_correction
   vars:
     question: Is the C54 casino app safe to share publicly right now?
@@ -1130,8 +978,6 @@
   assert:
     - type: icontains
       value: C54
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q108 claim_correction
   vars:
     question: Does SmartApply really scrape more than 2,000 postings every day?
@@ -1140,8 +986,6 @@
   assert:
     - type: icontains
       value: postings
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q109 claim_correction
   vars:
     question: Can you prove the 80% cost reduction for SmartApply scoring?
@@ -1150,8 +994,6 @@
   assert:
     - type: icontains
       value: cost
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q110 claim_correction
   vars:
     question: Are the 30% reusability, 20% latency and 25% render improvement numbers from the CWIPedia internship measured?
@@ -1160,8 +1002,6 @@
   assert:
     - type: icontains
       value: internship
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q111 claim_correction
   vars:
     question: Does Aura have 122 tests with 100% coverage?
@@ -1170,8 +1010,6 @@
   assert:
     - type: icontains
       value: "129"
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q112 claim_correction
   vars:
     question: Is the Pawna camping platform production-ready with no known security gaps?
@@ -1180,8 +1018,6 @@
   assert:
     - type: icontains
       value: booking
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q113 claim_correction
   vars:
     question: You claim MCP integrations in your shipped projects. Which project depends on MCP?
@@ -1190,8 +1026,6 @@
   assert:
     - type: icontains
       value: MCP
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q114 claim_correction
   vars:
     question: What technology stack did you actually use for C54? React, Node and Vite?
@@ -1200,8 +1034,6 @@
   assert:
     - type: icontains
       value: vanilla
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q115 claim_correction
   vars:
     question: Summarise what the C54 settlement engine actually does.
@@ -1210,8 +1042,6 @@
   assert:
     - type: icontains
       value: settlement
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "claims";
 - description: q116 comparison
   vars:
     question: Compare SmartApply and Pawna Camping side by side.
@@ -1222,8 +1052,6 @@
       value: SmartApply
     - type: icontains
       value: Pawna
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q117 comparison
   vars:
     question: How do SmartApply and Pawna Camping differ in their stacks?
@@ -1234,8 +1062,6 @@
       value: Python
     - type: icontains
       value: Node
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q118 comparison
   vars:
     question: Which of your projects is live, and which are still prototypes?
@@ -1246,8 +1072,6 @@
       value: live
     - type: icontains
       value: prototype
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q119 comparison
   vars:
     question: Compare Aura and Personal AI OS - how do the two AI projects differ?
@@ -1256,8 +1080,6 @@
   assert:
     - type: icontains
       value: Aura
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q120 comparison
   vars:
     question: How do the metrics compare across SmartApply, Pawna, C54, Aura and DayScore?
@@ -1266,8 +1088,6 @@
   assert:
     - type: icontains
       value: SmartApply
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q121 comparison
   vars:
     question: Compare the caveats of your live projects. Which one has the most open security work?
@@ -1276,8 +1096,6 @@
   assert:
     - type: icontains
       value: Pawna
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q122 comparison
   vars:
     question: SmartApply and the standalone dashboard both score jobs. How are they different?
@@ -1286,8 +1104,6 @@
   assert:
     - type: icontains
       value: scor
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q123 comparison
   vars:
     question: Compare how Pawna and SmartApply both track state in a database.
@@ -1296,8 +1112,6 @@
   assert:
     - type: icontains
       value: MongoDB
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q124 comparison
   vars:
     question: Compare the AI providers used across SmartApply, Aura and Personal AI OS.
@@ -1308,8 +1122,6 @@
       value: DeepSeek
     - type: icontains
       value: Gemini
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q125 comparison
   vars:
     question: Compare the test strategy of SmartApply and Aura.
@@ -1318,8 +1130,6 @@
   assert:
     - type: icontains
       value: test
-    - type: javascript
-      value: const kind = context.vars.visualKind || (context.response && context.response.visualKind); return kind === "comparison";
 - description: q126 off_topic_refusal
   vars:
     question: What is the weather in Mumbai today?

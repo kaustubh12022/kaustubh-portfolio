@@ -112,6 +112,7 @@ providers:
           }
 
           return {
+            output: answer,
             answer: answer,
             visual: visual,
             visualKind: visual && visual.visual ? visual.visual.kind : null,

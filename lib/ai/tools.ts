@@ -172,7 +172,7 @@ const PROJECT_ID = z
   .min(1)
   .max(200)
   .describe(
-    "Project id. Known ids: smartapply, pawna, c54, aura, personal-ai-os, dayscore.",
+    "Project id. Known ids: smartapply, pawna, c54, aura, personal-ai-os, dayscore, copilot.",
   );
 
 /**
@@ -261,7 +261,13 @@ const RENDER_INPUT = z.object({
 /* Visual spec validation                                             */
 /* ------------------------------------------------------------------ */
 
-const VISUAL_KIND = z.enum([
+/**
+ * The twelve visual kinds.
+ *
+ * Kept next to {@link VisualSpecSchema} so the two cannot drift apart: the
+ * schema below is built from these exact literals.
+ */
+const VISUAL_KINDS = [
   "profile",
   "education",
   "skills",
@@ -274,7 +280,12 @@ const VISUAL_KIND = z.enum([
   "metrics",
   "claims",
   "contact",
-]);
+] as const;
+
+/** True when the string is one of the twelve known visual kinds. */
+export function isVisualKind(value: string): boolean {
+  return (VISUAL_KINDS as readonly string[]).includes(value);
+}
 
 /**
  * The Zod mirror of `VisualSpec` in `lib/types/chat.ts`.
@@ -1013,7 +1024,7 @@ export function createTools(state: ToolState): ToolSet {
         );
 
       const followUps = input.followUps
-        .map((item) => item.trim())
+        .map((item) => item.trim().slice(0, 140))
         .filter((item) => item.length >= 3)
         .slice(0, 3);
 
@@ -1023,10 +1034,13 @@ export function createTools(state: ToolState): ToolSet {
           ? confidenceRaw
           : "medium";
 
+      // Two caveats, one short line each. The model is told this in the
+      // prompt; the clamp is here so a verbose model cannot turn the
+      // declaration into a second essay (and blow the output cap).
       const caveats = input.caveats
-        .map((item) => item.trim())
+        .map((item) => item.trim().slice(0, 200))
         .filter((item) => item.length >= 3)
-        .slice(0, 5);
+        .slice(0, 2);
 
       state.declaration = {
         spec,

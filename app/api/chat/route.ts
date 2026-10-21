@@ -62,7 +62,6 @@ import {
 import {
   createToolState,
   createTools,
-  findServedChunk,
   type ToolState,
 } from "@/lib/ai/tools";
 import type { EvidenceRef, VisualSpec } from "@/lib/types/chat";
@@ -761,34 +760,31 @@ async function buildPayload(
   let droppedCitations = 0;
 
   if (declaration && declaration.evidence.length > 0) {
-    // Fill in a quote ONLY when the model cited exactly one chunk that was
-    // really served: then the chunk content IS the text at those lines, so
-    // the exact-match check still applies without the model spending output
-    // tokens on a quote it might get wrong.
-    const candidates: EvidenceRef[] = declaration.evidence.map((ref) => {
-      const base: EvidenceRef = {
-        projectId: ref.projectId,
-        path: ref.path,
-        startLine: ref.startLine,
-        endLine: ref.endLine,
-        symbol: ref.symbol,
-        label: "",
-        verified: false,
-      };
-      if (ref.quote && ref.quote.trim().length > 0) {
-        return { ...base, quote: ref.quote };
-      }
-      const served = findServedChunk(
-        state,
-        ref.projectId,
-        ref.path,
-        ref.startLine,
-        ref.endLine,
-      );
-      return served && served.content
-        ? { ...base, quote: served.content }
-        : base;
-    });
+    // The citations are validated as the model wrote them.
+    //
+    // There is deliberately NO quote auto-fill here. An earlier version
+    // filled a missing quote from the server's own copy of the chunk it had
+    // served - and that copy is the CLIPPED text (the model only ever sees
+    // the first 2200 characters of a chunk), while the validator compares
+    // against the FULL indexed chunk. Every citation to a chunk larger than
+    // the clip limit therefore failed the exact-match test and was dropped,
+    // which is what the production log showed.
+    //
+    // The index-resolution rule (the range really exists in the indexed
+    // source) is the gate. A quote the model supplies itself is still
+    // checked, exactly, when it supplies one.
+    const candidates: EvidenceRef[] = declaration.evidence.map((ref) => ({
+      projectId: ref.projectId,
+      path: ref.path,
+      startLine: ref.startLine,
+      endLine: ref.endLine,
+      symbol: ref.symbol,
+      label: "",
+      verified: false,
+      ...(ref.quote && ref.quote.trim().length > 0
+        ? { quote: ref.quote }
+        : {}),
+    }));
 
     const validation = await validateEvidence(candidates);
     evidence = validation.verified.map((ref) => ({
@@ -881,7 +877,7 @@ async function buildPayload(
     evidence,
     followUps: (declaration?.followUps ?? []).slice(0, 3),
     confidence,
-    caveats: caveats.slice(0, 6),
+    caveats: caveats.slice(0, 8),
     mode: context.retrievalUnavailable ? "claims-only" : "retrieval",
     droppedCitations,
   };
