@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   /**
    * The embedding model is bundled with the deployment.
    *
-   * `models/all-MiniLM-L6-v2` holds the ONNX weights, the tokenizer and the
+   * `models/Xenova/all-MiniLM-L6-v2` holds the ONNX weights, the tokenizer and the
    * config for the local `Xenova/all-MiniLM-L6-v2` model. It is 22.6 MB and
    * it is committed to the repository on purpose.
    *

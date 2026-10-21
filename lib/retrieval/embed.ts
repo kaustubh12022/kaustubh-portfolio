@@ -188,6 +188,13 @@ async function loadExtractor(): Promise<Extractor> {
     env.cacheDir = MODEL_CACHE_DIR;
   }
 
+  // Force WASM backend: native onnxruntime-node cannot be traced into
+  // Vercel serverless bundles.
+  if (env.backends?.onnx?.wasm) {
+    env.backends.onnx.wasm.numThreads = 1;
+    env.backends.onnx.wasm.proxy = false;
+  }
+
   const extractor = await pipeline("feature-extraction", EMBEDDING_MODEL, {
     dtype: EMBEDDING_DTYPE,
   });
