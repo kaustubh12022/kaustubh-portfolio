@@ -1,0 +1,32 @@
+{
+  "id": "aura",
+  "title": "Aura voice loop",
+  "subtitle": "Browser PCM -> relay -> Gemini Live -> scheduled playback",
+  "direction": "horizontal",
+  "columns": [
+    { "id": "browser", "label": "Browser" },
+    { "id": "relay", "label": "Relay" },
+    { "id": "model", "label": "Gemini Live" },
+    { "id": "output", "label": "Output" }
+  ],
+  "nodes": [
+    { "id": "mic", "label": "Mic", "detail": "16 kHz PCM", "column": 0, "tone": "ink" },
+    { "id": "ws", "label": "WebSocket", "detail": "same-origin relay", "column": 1, "tone": "accent" },
+    { "id": "live", "label": "Gemini Live", "detail": "bidiGenerateContent", "column": 2, "tone": "ink" },
+    { "id": "tools", "label": "Tool calls", "detail": "orders + cancellation", "column": 2, "tone": "muted" },
+    { "id": "playback", "label": "Playback", "detail": "24 kHz scheduled chunks", "column": 3, "tone": "accent" },
+    { "id": "summary", "label": "Post-call summary", "detail": "deterministic fallback", "column": 3, "tone": "muted" }
+  ],
+  "edges": [
+    { "from": "mic", "to": "ws", "label": "stream" },
+    { "from": "ws", "to": "live", "label": "relay" },
+    { "from": "live", "to": "tools", "label": "function call" },
+    { "from": "tools", "to": "live", "label": "tool result" },
+    { "from": "live", "to": "playback", "label": "audio" },
+    { "from": "live", "to": "summary", "label": "end of call" }
+  ],
+  "notes": [
+    "Barge-in interrupts scheduled playback when the caller speaks.",
+    "Built as a hiring assessment; published with permission and labelled."
+  ]
+}

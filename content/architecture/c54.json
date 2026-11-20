@@ -1,0 +1,30 @@
+{
+  "id": "c54",
+  "title": "C54 live session and settlement",
+  "subtitle": "Host-authoritative scoreboard, exact subset-DP settlement",
+  "direction": "horizontal",
+  "columns": [
+    { "id": "host", "label": "Host" },
+    { "id": "db", "label": "Supabase" },
+    { "id": "guest", "label": "Guests" },
+    { "id": "settle", "label": "Settlement" }
+  ],
+  "nodes": [
+    { "id": "host-ui", "label": "Host UI", "detail": "round entry", "column": 0, "tone": "ink" },
+    { "id": "session", "label": "Session JSON", "detail": "live_sessions row", "column": 1, "tone": "accent" },
+    { "id": "realtime", "label": "Realtime channel", "detail": "Supabase broadcast", "column": 1, "tone": "muted" },
+    { "id": "guest-ui", "label": "Guest scoreboard", "detail": "read-only", "column": 2, "tone": "ink" },
+    { "id": "settle", "label": "Settlement engine", "detail": "subset DP + greedy fallback", "column": 3, "tone": "accent" }
+  ],
+  "edges": [
+    { "from": "host-ui", "to": "session", "label": "write" },
+    { "from": "session", "to": "realtime", "label": "change" },
+    { "from": "realtime", "to": "guest-ui", "label": "subscribe" },
+    { "from": "session", "to": "settle", "label": "balances" },
+    { "from": "settle", "to": "host-ui", "label": "transfers" }
+  ],
+  "notes": [
+    "Host writes the whole session JSON; guests do not mutate state.",
+    "Settlement uses integer paise and exact subset DP for up to 15 players."
+  ]
+}

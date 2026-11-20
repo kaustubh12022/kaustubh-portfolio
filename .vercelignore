@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+dist
+.env*
+coverage
+playwright-report
+test-results
+blob-report
+.dev.log
+.dev.err

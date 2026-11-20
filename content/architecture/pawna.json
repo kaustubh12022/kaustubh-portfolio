@@ -1,0 +1,36 @@
+{
+  "id": "pawna",
+  "title": "Pawna booking flow",
+  "subtitle": "Visitor booking, owner operations, one Express API",
+  "direction": "horizontal",
+  "columns": [
+    { "id": "client", "label": "Client" },
+    { "id": "api", "label": "API" },
+    { "id": "logic", "label": "Booking logic" },
+    { "id": "data", "label": "Data" },
+    { "id": "ops", "label": "Operations" }
+  ],
+  "nodes": [
+    { "id": "booking-ui", "label": "Booking UI", "detail": "React + Vite", "column": 0, "tone": "ink" },
+    { "id": "owner-ui", "label": "Owner UI", "detail": "role-scoped dashboards", "column": 0, "tone": "muted" },
+    { "id": "express", "label": "Express API", "detail": "~55 routes", "column": 1, "tone": "accent" },
+    { "id": "jwt", "label": "JWT + RBAC", "detail": "owner / manager", "column": 1, "tone": "muted" },
+    { "id": "booking", "label": "Booking controller", "detail": "dates + guests + package", "column": 2, "tone": "ink" },
+    { "id": "pricing", "label": "Pricing", "detail": "weekday / weekend + per-person", "column": 2, "tone": "muted" },
+    { "id": "mongo", "label": "MongoDB", "detail": "User / Property / Booking / Revenue", "column": 3, "tone": "ink" },
+    { "id": "owner-dash", "label": "Owner dashboard", "detail": "bookings + revenue", "column": 4, "tone": "accent" }
+  ],
+  "edges": [
+    { "from": "booking-ui", "to": "express", "label": "POST /api/bookings" },
+    { "from": "owner-ui", "to": "express" },
+    { "from": "express", "to": "jwt" },
+    { "from": "jwt", "to": "booking" },
+    { "from": "booking", "to": "pricing" },
+    { "from": "pricing", "to": "mongo" },
+    { "from": "mongo", "to": "owner-dash" }
+  ],
+  "notes": [
+    "Booking creation is not wrapped in a transaction or lock; simultaneous requests can race.",
+    "This is one Express monolith, not a microservice deployment."
+  ]
+}

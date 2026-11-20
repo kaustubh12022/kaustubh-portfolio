@@ -1,0 +1,81 @@
+id: c54
+name: C54
+tagline: Card-score settlement engine for 54-card deck group card games
+status: live
+role: Solo build
+timeline: "2026"
+repo: https://github.com/kaustubh12022/C54-Casino
+live: https://c54-casino.vercel.app
+featured: true
+
+stack:
+  - Vanilla JavaScript
+  - HTML5
+  - CSS3
+  - PWA
+  - Supabase
+  - PostgreSQL
+  - Supabase Realtime
+
+summary: >
+  A card-score settlement engine built for 54-card deck group card games (including
+  friendly rounds of Poker, Rummy, and Teen Patti / bluff). Built as an installable
+  Vanilla JS/HTML5 PWA backed by Supabase Postgres & Realtime (NOT Flutter or Deno).
+  The host enters rounds, everyone sees a live scoreboard, and an exact subset-sum
+  dynamic programming (DP) settlement engine minimizes transfer transactions.
+
+highlights:
+  - Built for 54-card deck group card games (including friendly rounds of Poker, Rummy, and Teen Patti / bluff).
+  - Built in Vanilla JS/HTML5 PWA with Supabase Postgres & Realtime (NOT Flutter or Deno).
+  - Exact subset-sum DP settlement engine for up to 15 players to minimize transfer transactions, with a greedy fallback.
+  - Integer-paise arithmetic to avoid floating-point drift.
+  - Live scoreboard over Supabase Realtime with host-authoritative rounds.
+  - 44 assert() call sites covering the settlement engine.
+
+features:
+  - title: Settlement engine
+    detail: >
+      The engine computes each player's net balance, then finds the minimum number
+      of transfer transactions using an exact subset-sum dynamic programming algorithm
+      for small groups and a greedy pass for larger ones. All amounts are integer paise.
+    evidence: "app.js; test_suite.js"
+  - title: Live session
+    detail: >
+      The host writes the session JSON; guests subscribe to the Supabase Realtime
+      channel and see the scoreboard update. The host is the source of truth.
+    evidence: "app.js; init_tables.js"
+  - title: PWA shell
+    detail: >
+      Installable mobile-first Vanilla JS/HTML5/CSS3 PWA with offline caching for the shell
+      and a compact score-entry flow.
+    evidence: "manifest.json; sw.js"
+
+metrics:
+  - label: Code lines
+    value: "4.7k"
+    note: "vanilla JS/HTML/CSS"
+  - label: Test assertions
+    value: "44"
+    note: "44 assert() call sites (`grep -c \"assert(\" C54-Casino/test_suite.js`)"
+  - label: Git commits
+    value: "23"
+    note: "Jun-Sep 2026"
+
+caveats:
+  - "Not a playable casino and not Socket.IO; it is a host-authoritative card-score settlement engine."
+  - "Built in Vanilla JS/HTML5 PWA with Supabase Postgres & Realtime (NOT Flutter/Deno)."
+  - "Hardcoded Supabase credentials are present in the repo; rotate them now."
+  - "RLS policies allow anon reads/inserts/updates; tighten before sharing the live demo."
+  - "Guests are read-only; there is no concurrent per-player gameplay."
+
+assets:
+  - src: /media/c54/icon-512.png
+    alt: C54 app icon
+    caption: "C54 PWA icon; UI capture pending."
+    kind: icon
+    status: ready
+  - src: /media/c54/scoreboard.png
+    alt: C54 live scoreboard
+    caption: "Scoreboard capture needed (Phase 6)."
+    kind: screenshot
+    status: needed

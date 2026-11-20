@@ -1,0 +1,40 @@
+{
+  "id": "dayscore",
+  "title": "DayScore offline-first data path",
+  "subtitle": "Static PWA: hash router, localStorage, optional Firestore sync, CSV export",
+  "direction": "horizontal",
+  "columns": [
+    { "id": "shell", "label": "Shell" },
+    { "id": "views", "label": "Views" },
+    { "id": "storage", "label": "Storage" },
+    { "id": "sync", "label": "Sync and export" }
+  ],
+  "nodes": [
+    { "id": "sw", "label": "Service worker", "detail": "cache-first shell, background revalidate", "column": 0, "tone": "muted" },
+    { "id": "router", "label": "Hash router", "detail": "#/today, #/plan, #/history", "column": 0, "tone": "ink" },
+    { "id": "today", "label": "Today view", "detail": "done / partial / not done + SVG progress ring", "column": 1, "tone": "ink" },
+    { "id": "plan", "label": "Plan and history", "detail": "tomorrow's tasks, past-day review", "column": 1, "tone": "muted" },
+    { "id": "storage", "label": "localStorage", "detail": "dayscore_data: tasks, tags, settings", "column": 2, "tone": "accent" },
+    { "id": "boundary", "label": "5 AM day boundary", "detail": "unmarked past days close to not_done", "column": 2, "tone": "muted" },
+    { "id": "firebase", "label": "Firestore sync", "detail": "optional: dual write + onSnapshot", "column": 3, "tone": "muted" },
+    { "id": "export", "label": "CSV export", "detail": "one row per task, day score per day", "column": 3, "tone": "ink" }
+  ],
+  "edges": [
+    { "from": "sw", "to": "router", "label": "shell" },
+    { "from": "router", "to": "today", "label": "hash route" },
+    { "from": "router", "to": "plan", "label": "hash route" },
+    { "from": "today", "to": "storage", "label": "read and write" },
+    { "from": "plan", "to": "storage", "label": "read and write" },
+    { "from": "storage", "to": "boundary", "label": "day key" },
+    { "from": "storage", "to": "firebase", "label": "push when configured", "dashed": true },
+    { "from": "firebase", "to": "storage", "label": "pull and snapshot", "dashed": true },
+    { "from": "storage", "to": "export", "label": "date range" }
+  ],
+  "notes": [
+    "Firebase sync is optional. The config file is gitignored, so a fresh clone runs in local-only mode and never makes a network call.",
+    "The day boundary is 5 AM: before it, the app still edits yesterday's tasks.",
+    "Day score is (done x 1.0 + partial x 0.5) divided by the marked tasks, rounded to a percent.",
+    "The repo ships no Firestore security rules file, so a configured Firebase project must secure its own documents.",
+    "Static site with no build step and no runtime dependencies; `npm test` runs a standalone Node script."
+  ]
+}

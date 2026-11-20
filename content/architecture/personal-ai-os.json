@@ -1,0 +1,34 @@
+{
+  "id": "personal-ai-os",
+  "title": "Personal AI OS request path",
+  "subtitle": "Flutter -> Supabase edge function -> Gemini/Groq -> Postgres",
+  "direction": "horizontal",
+  "columns": [
+    { "id": "app", "label": "Flutter app" },
+    { "id": "edge", "label": "Supabase edge" },
+    { "id": "model", "label": "Model" },
+    { "id": "data", "label": "Data" }
+  ],
+  "nodes": [
+    { "id": "chat-ui", "label": "Chat UI", "detail": "tasks, expenses, budgets", "column": 0, "tone": "ink" },
+    { "id": "supabase", "label": "Supabase client", "detail": "auth + realtime", "column": 0, "tone": "muted" },
+    { "id": "edge", "label": "Deno edge function", "detail": "intent contract", "column": 1, "tone": "accent" },
+    { "id": "regex", "label": "Regex fast-path", "detail": "zero-token commands", "column": 1, "tone": "muted" },
+    { "id": "gemini", "label": "Gemini", "detail": "primary", "column": 2, "tone": "ink" },
+    { "id": "groq", "label": "Groq", "detail": "fallback", "column": 2, "tone": "muted" },
+    { "id": "postgres", "label": "Postgres", "detail": "tasks / expenses / budgets", "column": 3, "tone": "accent" }
+  ],
+  "edges": [
+    { "from": "chat-ui", "to": "supabase" },
+    { "from": "supabase", "to": "edge", "label": "invoke" },
+    { "from": "edge", "to": "regex" },
+    { "from": "regex", "to": "gemini", "label": "needs language" },
+    { "from": "gemini", "to": "groq", "label": "fallback", "dashed": true },
+    { "from": "gemini", "to": "postgres", "label": "validated intent" },
+    { "from": "postgres", "to": "chat-ui", "label": "result" }
+  ],
+  "notes": [
+    "No Python, Ollama, LangChain, FastAPI, or SQLite in this repo.",
+    "No voice pipeline and no provider tool calling; the edge function executes JSON intents."
+  ]
+}

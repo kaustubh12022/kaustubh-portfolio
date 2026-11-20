@@ -1,0 +1,99 @@
+- id: smartapply-dashboard
+  project: smartapply
+  kind: screenshot
+  src: /media/smartapply/dashboard-tracker.png
+  sourcePath: "JobHunt-Automation/test_screenshots/4_tracker_view_verified.png"
+  alt: SmartApply application tracker with job cards and status columns
+  caption: "SmartApply tracker, verified screenshot (2026)"
+  capturedAt: "2026"
+  status: ready
+
+- id: smartapply-scanning
+  project: smartapply
+  kind: screenshot
+  src: /media/smartapply/dashboard-scanning.png
+  sourcePath: "JobHunt-Automation/test_screenshots/2_scanning_view_verified.png"
+  alt: SmartApply scanning view with live pipeline progress
+  caption: "SmartApply scanning view, verified screenshot (2026)"
+  capturedAt: "2026"
+  status: ready
+
+- id: smartapply-mobile
+  project: smartapply
+  kind: screenshot
+  src: /media/smartapply/dashboard-mobile.png
+  sourcePath: "JobHunt-Automation/test_screenshots/5_tracker_mobile_verified.png"
+  alt: SmartApply tracker on a mobile viewport
+  caption: "SmartApply mobile tracker, verified screenshot (2026)"
+  capturedAt: "2026"
+  status: ready
+
+- id: smartapply-cards
+  project: smartapply
+  kind: screenshot
+  src: /media/smartapply/job-cards.png
+  sourcePath: "JobHunt-Automation/test_screenshots/6_cards_and_badges_verified.png"
+  alt: SmartApply job cards with match badges
+  caption: "SmartApply job cards and badges, verified screenshot (2026)"
+  capturedAt: "2026"
+  status: ready
+
+- id: pawna-cover
+  project: pawna
+  kind: photo
+  src: /media/pawna/cover.webp
+  sourcePath: "Pawna-camping/public/Pawna-Heart-Camp-01.webp"
+  alt: Pawna lake camping property at dusk
+  caption: "Pawna camping property photo from the project; UI capture pending."
+  capturedAt: "2026"
+  status: ready
+
+- id: c54-icon
+  project: c54
+  kind: icon
+  src: /media/c54/icon-512.png
+  sourcePath: "C54-Casino/icons/icon-512.png"
+  alt: C54 Casino app icon
+  caption: "C54 PWA icon; UI capture pending."
+  capturedAt: "2026"
+  status: ready
+
+- id: personal-ai-os-card
+  project: personal-ai-os
+  kind: card
+  src: /media/personal-ai-os/card.png
+  sourcePath: "Desktop/LinkedIn-Project-Media/paios-card.png"
+  alt: Personal AI OS project card
+  caption: "Personal AI OS project card; in-app capture pending."
+  capturedAt: "2026"
+  status: ready
+
+- id: aura-live
+  project: aura
+  kind: screenshot
+  src: /media/aura/live-app.png
+  sourcePath: "Desktop/LinkedIn-Project-Visuals/01-aura-live-app.png"
+  alt: Aura voice agent live interface
+  caption: "Aura live interface capture (2026)"
+  capturedAt: "2026"
+  status: ready
+
+- id: aura-card
+  project: aura
+  kind: card
+  src: /media/aura/card.png
+  sourcePath: "Desktop/LinkedIn-Project-Media/aura-card.png"
+  alt: Aura voice agent project card
+  caption: "Aura project card (2026)"
+  capturedAt: "2026"
+  status: ready
+
+- id: dayscore-icon
+  project: dayscore
+  kind: icon
+  src: /media/dayscore/icon-512.png
+  sourcePath: "DayScore/icons/icon-512.png"
+  alt: DayScore app icon
+  caption: "DayScore PWA icon; UI capture pending."
+  capturedAt: "2026"
+  status: ready
